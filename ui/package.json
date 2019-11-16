@@ -1,0 +1,11 @@
+{
+  "name": "gomoku-ui",
+  "version": "1.0.0",
+  "description": "UI of the gomoku game",
+  "main": "index.jsx",
+  "scripts": {
+    "test": ""
+  },
+  "author": "kyazdani & vguillem",
+  "license": "MIT"
+}
