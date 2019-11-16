@@ -1,12 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import bg from "./background.jpg";
 
-import { Gomoku } from './Gomoku';
+import { Gomoku } from "./Gomoku";
 
 const element = document.getElementById("root");
 
 const App = () => (
-  <div>
+  <div
+    style={{
+      width: "100vw",
+      height: "100vh",
+      background: `url(${bg})`,
+      backgroundSize: "cover"
+    }}
+  >
     <Gomoku />
   </div>
 );

@@ -32,7 +32,7 @@ export const Gomoku = () => {
   // return GameSelection
 
   return (
-    <div>
+    <div style={{ paddingTop: '50px' }}>
       <Board
         board={state.board}
         player={state.player}

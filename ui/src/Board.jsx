@@ -4,6 +4,7 @@ export const Board = ({ onClick, board, player }) => {
   const lines = new Array(Math.sqrt(board.length)).fill(0);
   return (
     <div style={boardStyle}>
+      <Cleanup />
       {lines.map((_, line) => (
         <div style={lineStyle} key={`line-${line}`}>
           {board
@@ -23,12 +24,64 @@ export const Board = ({ onClick, board, player }) => {
   );
 };
 
+const Cleanup = () => (
+  <React.Fragment>
+    <div
+      style={{
+        width: "34px",
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 1000,
+        background: "#c48e54"
+      }}
+    />
+    <div
+      style={{
+        height: "34px",
+        position: "absolute",
+        left: 0,
+        top: 0,
+        right: 0,
+        zIndex: 1000,
+        background: "#c48e54"
+      }}
+    />
+    <div
+      style={{
+        height: "34px",
+        position: "absolute",
+        left: 0,
+        bottom: 0,
+        right: 0,
+        zIndex: 1000,
+        background: "#c48e54"
+      }}
+    />
+    <div
+      style={{
+        width: "34px",
+        position: "absolute",
+        right: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 1000,
+        background: "#c48e54"
+      }}
+    />
+  </React.Fragment>
+);
+
 const Block = ({ index, block, onClick, player }) => {
   const [hover, setHover] = useState(false);
   return (
     <div
       style={blockStyle}
-      onClick={() => onClick(index)}
+      onClick={() => {
+        onClick(index);
+        setHover(false);
+      }}
       onMouseOver={() => setHover(block === 0)}
       onMouseOut={() => setHover(false)}
     >
@@ -50,7 +103,8 @@ const WhiteStone = ({ hover, occupied }) => (
     style={{
       overflow: "hidden",
       position: "absolute",
-      opacity: occupied ? 1 : hover ? 0.4 : 0
+      opacity: occupied ? 1 : hover ? 0.6 : 0,
+      zIndex: 2000
     }}
     height="40px"
     width="40px"
@@ -89,7 +143,8 @@ const BlackStone = ({ occupied, hover }) => (
     style={{
       overflow: "hidden",
       position: "absolute",
-      opacity: occupied ? 1 : hover ? 0.4 : 0
+      opacity: occupied ? 1 : hover ? 0.6 : 0,
+      zIndex: 2000
     }}
     height="40px"
     width="40px"
@@ -136,7 +191,10 @@ const lineStyle = {
 
 const boardStyle = {
   backgroundColor: "#c48e54",
+  position: "relative",
   maxWidth: "fit-content",
-  padding: "30px",
-  margin: "auto"
+  padding: "15px",
+  margin: "auto",
+  boxShadow: "0 5px 10px rgba(0,0,0,0.20), 0 7px 20px rgba(0,0,0,0.15)",
+  border: "6px outset #c7977a"
 };
