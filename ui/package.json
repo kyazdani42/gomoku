@@ -4,8 +4,20 @@
   "description": "UI of the gomoku game",
   "main": "index.jsx",
   "scripts": {
-    "test": ""
+    "dev": "parcel serve --port 3000 ./src/index.html"
   },
   "author": "kyazdani & vguillem",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "parcel-bundler": "^1.12.4",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-esnext": "^1.1.3",
+    "babel-preset-react": "^6.24.1",
+    "react-hot-loader": "^4.12.18"
+  }
 }
