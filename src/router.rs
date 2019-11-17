@@ -23,8 +23,6 @@ pub fn router(req: Request<Body>) -> FutureResponse {
 fn get(response: &mut Response<Body>, path: &str) {
     match path {
         "/all_the_route_with_no_hanlding_will_try_to_access_the_public_files" => {}
-        // might want to do a handle_static that sets the response itself and handles error
-        // in case image detection doesnt work as expected
         _ => {
             if path.ends_with(".jpg") || path.ends_with(".png") {
                 match get_binary_file(path) {
