@@ -186,13 +186,13 @@ const blockStyle = {
 
 const lineStyle = {
   display: "flex",
-  maxWidth: "fit-content"
+  maxWidth: "max-content"
 };
 
 const boardStyle = {
   backgroundColor: "#c48e54",
   position: "relative",
-  maxWidth: "fit-content",
+  maxWidth: "max-content",
   padding: "15px",
   margin: "auto",
   boxShadow: "0 5px 10px rgba(0,0,0,0.20), 0 7px 20px rgba(0,0,0,0.15)",
