@@ -4,7 +4,7 @@
   "description": "UI of the gomoku game",
   "main": "index.jsx",
   "scripts": {
-    "dev": "parcel serve --port 3000 ./src/index.html"
+    "dev": "parcel serve --port 3000 ./app/index.html"
   },
   "author": "kyazdani & vguillem",
   "license": "MIT",
