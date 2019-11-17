@@ -1,5 +1,5 @@
 [package]
-name = "gomoku-api"
+name = "gomoku"
 version = "1.0.0"
 authors = ["kyazdani42 <yazdani.kiyan@protonmail.com>, vguillem <vguillem@student.42.fr"]
 edition = "2018"
@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 hyper = "0.12"
+futures = "0.1"
