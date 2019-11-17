@@ -1,10 +1,11 @@
 {
-  "name": "gomoku-ui",
+  "name": "gomoku-client",
   "version": "1.0.0",
   "description": "UI of the gomoku game",
   "main": "index.jsx",
   "scripts": {
-    "dev": "parcel serve --port 3000 ./app/index.html"
+    "dev": "parcel serve --port 3000 ./app/index.html",
+    "build": "parcel build ./app/index.html --no-source-maps --out-dir public"
   },
   "author": "kyazdani & vguillem",
   "license": "MIT",
