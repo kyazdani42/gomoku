@@ -1,7 +1,7 @@
-mod aligned;
-mod moves;
-
+pub mod aligned;
+pub mod moves;
 pub mod rules;
+pub mod captures;
 
 // use game_rules::rules::place_piece;
 //
