@@ -13,16 +13,22 @@ pub fn router(req: Request<Body>) -> FutureResponse {
     let mut response = Response::new(Body::empty());
 
     match req.method() {
-        &Method::GET => get(&mut response, req.uri().path()),
+        &Method::GET => get(&mut response, &req),
         _ => *response.status_mut() = StatusCode::NOT_FOUND,
     }
 
     Box::new(future::ok(response))
 }
 
-fn get(response: &mut Response<Body>, path: &str) {
+fn get(response: &mut Response<Body>, req: &Request<Body>) {
+    let path = req.uri().path();
+    let params = req.uri().query();
     match path {
-        "/all_the_route_with_no_hanlding_will_try_to_access_the_public_files" => {}
+        "/init" => match handle_initialization(params) {
+            // here i might want to send back json with serde
+            Some(val) => *response.body_mut() = Body::from(val),
+            None => *response.status_mut() = StatusCode::BAD_REQUEST,
+        },
         _ => match get_static_asset(path) {
             Ok(val) => *response.body_mut() = Body::from(val),
             Err(_e) => *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR,
@@ -44,3 +50,32 @@ fn get_static_asset(path: &str) -> Result<Vec<u8>, std::io::Error> {
     Ok(fs::read(entry)?)
 }
 
+fn handle_initialization(params: Option<&str>) -> Option<String> {
+    let params = params?
+        .split("&")
+        .into_iter()
+        .map(|p| p.split("=").map(|s| s.to_owned()).collect::<Vec<String>>())
+        .collect::<Vec<Vec<String>>>();
+
+    let size_param = params.iter().find(|x| x[0] == "size")?;
+    if size_param.len() != 2 {
+        return None;
+    }
+    let _board_size = match size_param[1].parse::<usize>() {
+        Ok(v) => v,
+        Err(_) => return None,
+    };
+
+    let ia_param = params.iter().find(|x| x[0] == "ia")?;
+    if ia_param.len() != 2 {
+        return None;
+    }
+    let _ia = match size_param[1].parse::<u8>() {
+        Ok(v) => v,
+        Err(_) => return None,
+    };
+
+    //TODO: check if ia is a player or not
+
+    Some("".to_owned())
+}

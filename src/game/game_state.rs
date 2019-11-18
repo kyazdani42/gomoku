@@ -7,12 +7,9 @@ pub struct GameState {
     col: usize,
     player: u8,
     winner: u8,
-    // enable_ia: bool, > not sure, it might be irelevant
 }
 
 impl GameState {
-    // ca c'est comme un constructor mais tu dois l'apeller
-    // let game: GameState = GameState::new(size, player);
     pub fn new(board_size: usize, player: u8) -> GameState {
         GameState {
             board: vec![vec![0; board_size]; board_size],
@@ -21,7 +18,6 @@ impl GameState {
             col: 0,
             board_size,
             player,
-            // enable_ia: from param
         }
     }
 
@@ -32,6 +28,9 @@ impl GameState {
             self.board[line][col] = self.player;
             self.line = line;
             self.col = col;
+            if self.check_winner == true {
+                self.winner = self.player;
+            }
             self.switch_player();
             Ok(())
         }
