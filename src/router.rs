@@ -61,21 +61,27 @@ fn handle_initialization(params: Option<&str>) -> Option<String> {
     if size_param.len() != 2 {
         return None;
     }
-    let _board_size = match size_param[1].parse::<usize>() {
+    let board_size = match size_param[1].parse::<usize>() {
         Ok(v) => v,
         Err(_) => return None,
     };
+    if board_size > 25 || board_size < 19 {
+        return None;
+    }
 
     let ia_param = params.iter().find(|x| x[0] == "ia")?;
     if ia_param.len() != 2 {
         return None;
     }
-    let _ia = match size_param[1].parse::<u8>() {
+    let ia = match ia_param[1].parse::<u8>() {
         Ok(v) => v,
         Err(_) => return None,
     };
+    if ia != 0 && ia != 1 && ia != 2 {
+        return None;
+    }
 
     //TODO: check if ia is a player or not
 
-    Some("".to_owned())
+    Some("hello".to_owned())
 }
