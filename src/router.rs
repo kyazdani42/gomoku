@@ -6,26 +6,29 @@ use hyper::rt::Future;
 use hyper::{Body, Request, Response};
 use hyper::{Method, StatusCode};
 use std::fs;
+use std::sync::{Arc, Mutex};
+
+use crate::game::game_state::GameState;
 
 type FutureResponse = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-pub fn router(req: Request<Body>) -> FutureResponse {
+pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureResponse {
     let mut response = Response::new(Body::empty());
 
     match req.method() {
-        &Method::GET => get(&mut response, &req),
+        &Method::GET => get(&mut response, &req, state),
         _ => *response.status_mut() = StatusCode::NOT_FOUND,
     }
 
     Box::new(future::ok(response))
 }
 
-fn get(response: &mut Response<Body>, req: &Request<Body>) {
+fn get(response: &mut Response<Body>, req: &Request<Body>, state: &Arc<Mutex<GameState>>) {
     let path = req.uri().path();
     let params = req.uri().query();
     match path {
-        "/init" => match handle_initialization(params) {
-            // here i might want to send back json with serde
+        "/init" => match handle_initialization(params, state) {
+            // TODO: send back json with serde
             Some(val) => *response.body_mut() = Body::from(val),
             None => *response.status_mut() = StatusCode::BAD_REQUEST,
         },
@@ -50,7 +53,7 @@ fn get_static_asset(path: &str) -> Result<Vec<u8>, std::io::Error> {
     Ok(fs::read(entry)?)
 }
 
-fn handle_initialization(params: Option<&str>) -> Option<String> {
+fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
     let params = params?
         .split("&")
         .into_iter()
@@ -81,7 +84,10 @@ fn handle_initialization(params: Option<&str>) -> Option<String> {
         return None;
     }
 
-    //TODO: check if ia is a player or not
+    // TODO: handle ia in state
+    let mut state = state.lock().unwrap();
+    state.init(board_size, 1);
 
-    Some("hello".to_owned())
+    // TODO: send back json data
+    Some("".to_owned())
 }
