@@ -2,11 +2,11 @@ use crate::game::board;
 
 pub struct GameState {
     pub board: Vec<Vec<u8>>,
+    pub player: u8,
+    pub winner: u8,
     board_size: usize,
     line: usize,
     col: usize,
-    player: u8,
-    winner: u8,
 }
 
 impl GameState {

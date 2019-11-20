@@ -2,9 +2,10 @@ extern crate futures;
 extern crate hyper;
 
 use futures::future;
+use hyper::header::{HeaderValue, CONTENT_TYPE};
 use hyper::rt::Future;
-use hyper::{Body, Request, Response};
-use hyper::{Method, StatusCode};
+use hyper::{Body, Method, Request, Response, StatusCode};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, Mutex};
 
@@ -28,8 +29,11 @@ fn get(response: &mut Response<Body>, req: &Request<Body>, state: &Arc<Mutex<Gam
     let params = req.uri().query();
     match path {
         "/init" => match handle_initialization(params, state) {
-            // TODO: send back json with serde
-            Some(val) => *response.body_mut() = Body::from(val),
+            Some(val) => {
+                let app_json = HeaderValue::from_str("application/json").unwrap();
+                response.headers_mut().insert(CONTENT_TYPE, app_json);
+                *response.body_mut() = Body::from(val);
+            }
             None => *response.status_mut() = StatusCode::BAD_REQUEST,
         },
         _ => match get_static_asset(path) {
@@ -88,6 +92,20 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) ->
     let mut state = state.lock().unwrap();
     state.init(board_size, 1);
 
-    // TODO: send back json data
-    Some("".to_owned())
+    let data = Data {
+        board: state.board.clone(),
+        player: state.player,
+        winner: state.winner,
+    };
+    match serde_json::to_string(&data) {
+        Ok(json) => Some(json),
+        Err(_) => None,
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct Data {
+    board: Vec<Vec<u8>>,
+    player: u8,
+    winner: u8,
 }
