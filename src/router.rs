@@ -2,41 +2,42 @@ extern crate futures;
 extern crate hyper;
 
 use futures::future;
-use hyper::header::{HeaderValue, CONTENT_TYPE};
-use hyper::rt::{Future, Stream};
-use hyper::{Body, Method, Request, Response, StatusCode};
+use futures::Future;
+// use futures_util::TryStreamExt;
+use hyper::header::CONTENT_TYPE;
+use hyper::{Body, Error, Method, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::{Arc, Mutex};
 
 use crate::game::game_state::GameState;
 
+static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
+static NOTFOUND: &[u8] = b"Not Found";
+static BADREQUEST: &[u8] = b"Bad Request";
+
 type FutureResponse = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
 pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureResponse {
-    let mut response = Response::new(Body::empty());
-
-    match req.method() {
-        &Method::GET => get(&mut response, &req, state),
-        &Method::POST => post(&mut response, req, state),
-        _ => *response.status_mut() = StatusCode::NOT_FOUND,
-    }
+    let response = match req.method() {
+        &Method::GET => get(req, state),
+        &Method::POST => post(req, state),
+        _ => Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(NOTFOUND.into())
+            .unwrap()),
+    };
 
     Box::new(future::ok(response))
 }
 
-fn post(response: &mut Response<Body>, req: Request<Body>, state: &Arc<Mutex<GameState>>) {
-    let path = req.uri().path();
-    match path {
-        "/play" => match play(req, state) {
-            Some(val) => {
-                let app_json = HeaderValue::from_str("application/json").unwrap();
-                response.headers_mut().insert(CONTENT_TYPE, app_json);
-                *response.body_mut() = Body::from(val);
-            }
-            None => *response.status_mut() = StatusCode::BAD_REQUEST,
-        },
-        _ => *response.status_mut() = StatusCode::NOT_FOUND,
+fn post(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
+    match req.uri().path() {
+        "/play" => play(req, state),
+        _ => Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(NOTFOUND.into())
+            .unwrap()),
     }
 }
 
@@ -46,33 +47,56 @@ struct PlayBody {
     y: usize,
 }
 
-fn play(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Option<String> {
-    let mut new_state = state.lock().unwrap();
+fn play(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
+    // let body = req.into_body().try_concat().await.unwrap();
+    // let mut data: PlayBody = serde_json::from_slice(&body.to_vec()).unwrap();
 
-    // something wrong with .wait()
-    let body = req.into_body().concat2().wait().unwrap().into_bytes();
-    let body: PlayBody = serde_json::from_slice(&body).unwrap();
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, "application/json")
+        .body(Body::from("okay"))
+        .unwrap();
 
-    println!("{:?}", body);
-
-    Some("".to_owned())
+    Ok(response)
 }
+// let mut state = state.lock().unwrap();
+// let data = Data {
+//     board: state.board.clone(),
+//     player: state.player,
+//     winner: state.winner,
+// };
+// let json_data = match serde_json::to_string(&data) {
+//     Ok(json) => json,
+//     Err(_) => return *response.status_mut() = StatusCode::BAD_REQUEST,
+// };
+//
+// let app_json = HeaderValue::from_str("application/json").unwrap();
+// response.headers_mut().insert(CONTENT_TYPE, app_json);
+// *response.body_mut() = Body::from(json_data);
 
-fn get(response: &mut Response<Body>, req: &Request<Body>, state: &Arc<Mutex<GameState>>) {
-    let path = req.uri().path();
-    let params = req.uri().query();
-    match path {
-        "/init" => match handle_initialization(params, state) {
-            Some(val) => {
-                let app_json = HeaderValue::from_str("application/json").unwrap();
-                response.headers_mut().insert(CONTENT_TYPE, app_json);
-                *response.body_mut() = Body::from(val);
-            }
-            None => *response.status_mut() = StatusCode::BAD_REQUEST,
+fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
+    let uri = req.uri();
+    match uri.path() {
+        "/init" => match handle_initialization(uri.query(), state) {
+            Some(val) => Ok(Response::builder()
+                .header(CONTENT_TYPE, "application/json")
+                .status(StatusCode::OK)
+                .body(Body::from(val))
+                .unwrap()),
+            None => Ok(Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(BADREQUEST.into())
+                .unwrap()),
         },
-        _ => match get_static_asset(path) {
-            Ok(val) => *response.body_mut() = Body::from(val),
-            Err(_e) => *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR,
+        _ => match get_static_asset(uri.path()) {
+            Ok(val) => Ok(Response::builder()
+                .status(StatusCode::OK)
+                .body(Body::from(val))
+                .unwrap()),
+            Err(_e) => Ok(Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(INTERNAL_SERVER_ERROR.into())
+                .unwrap()),
         },
     }
 }
