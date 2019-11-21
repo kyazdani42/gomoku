@@ -3,7 +3,7 @@ extern crate hyper;
 
 use futures::future;
 use hyper::header::{HeaderValue, CONTENT_TYPE};
-use hyper::rt::Future;
+use hyper::rt::{Future, Stream};
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -18,10 +18,44 @@ pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureRespon
 
     match req.method() {
         &Method::GET => get(&mut response, &req, state),
+        &Method::POST => post(&mut response, req, state),
         _ => *response.status_mut() = StatusCode::NOT_FOUND,
     }
 
     Box::new(future::ok(response))
+}
+
+fn post(response: &mut Response<Body>, req: Request<Body>, state: &Arc<Mutex<GameState>>) {
+    let path = req.uri().path();
+    match path {
+        "/play" => match play(req, state) {
+            Some(val) => {
+                let app_json = HeaderValue::from_str("application/json").unwrap();
+                response.headers_mut().insert(CONTENT_TYPE, app_json);
+                *response.body_mut() = Body::from(val);
+            }
+            None => *response.status_mut() = StatusCode::BAD_REQUEST,
+        },
+        _ => *response.status_mut() = StatusCode::NOT_FOUND,
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct PlayBody {
+    x: usize,
+    y: usize,
+}
+
+fn play(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Option<String> {
+    let mut new_state = state.lock().unwrap();
+
+    // something wrong with .wait()
+    let body = req.into_body().concat2().wait().unwrap().into_bytes();
+    let body: PlayBody = serde_json::from_slice(&body).unwrap();
+
+    println!("{:?}", body);
+
+    Some("".to_owned())
 }
 
 fn get(response: &mut Response<Body>, req: &Request<Body>, state: &Arc<Mutex<GameState>>) {

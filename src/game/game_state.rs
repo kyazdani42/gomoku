@@ -27,9 +27,9 @@ impl GameState {
         self.player = player;
     }
 
-    pub fn place_stone(&mut self, line: usize, col: usize) -> Result<(), ()> {
+    pub fn place_stone(&mut self, line: usize, col: usize) -> Option<()> {
         if self.board[line][col] != 0 {
-            Err(())
+            None
         } else {
             self.board[line][col] = self.player;
             self.line = line;
@@ -38,7 +38,7 @@ impl GameState {
                 self.winner = self.player;
             }
             self.switch_player();
-            Ok(())
+            Some(())
         }
     }
 
