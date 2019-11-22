@@ -1,10 +1,7 @@
-extern crate futures;
 extern crate hyper;
 
-use futures::future;
-use futures::Future;
-// use futures_util::TryStreamExt;
 use hyper::header::CONTENT_TYPE;
+use hyper::rt::{lazy, Future, Stream};
 use hyper::{Body, Error, Method, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -28,7 +25,7 @@ pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureRespon
             .unwrap()),
     };
 
-    Box::new(future::ok(response))
+    Box::new(lazy(|| response))
 }
 
 fn post(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
@@ -48,7 +45,8 @@ struct PlayBody {
 }
 
 fn play(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
-    // let body = req.into_body().try_concat().await.unwrap();
+    // TODO: find a way to do this synchronously or handle asynchronousity somewhere
+    let body = req.into_body().concat2().map(|chunk| chunk.into_bytes());
     // let mut data: PlayBody = serde_json::from_slice(&body.to_vec()).unwrap();
 
     let response = Response::builder()
