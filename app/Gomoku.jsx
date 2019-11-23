@@ -20,18 +20,25 @@ export const Gomoku = () => {
 
   if (!state) return <GameSelection setInitParam={setInitParam} />;
 
-  console.log(state);
   return (
     <div style={{ paddingTop: '50px' }}>
       <Board
+        winner={state.winner}
         board={state.board.flat()}
         player={state.player}
-        onClick={payload =>
-          setPositions({
-            line: Math.floor(payload / state.board.length),
-            col: Math.floor(payload % state.board.length)
-          })
-        }
+        onClick={payload => {
+          const newBoard = JSON.parse(JSON.stringify(state.board));
+          const newLine = Math.floor(payload / state.board.length);
+          const newCol = payload % state.board.length;
+          if (newBoard[newLine][newCol] === 0) {
+            newBoard[newLine][newCol] = state.player;
+            setState({ ...state, board: newBoard });
+            setPositions({
+              line: newLine,
+              col: newCol
+            });
+          }
+        }}
       />
       {/* <Info /> */}
     </div>
@@ -54,7 +61,6 @@ const URL = 'http://localhost:3001';
 const getInitUrl = ({ ia, size }) => `${URL}/init?ia=${ia}&size=${size}`;
 
 const handlePlay = async (positions, setState, setError) => {
-  console.log(positions);
   const { line, col } = positions;
   const res = await fetch(getPlayUrl({ line, col }));
   const { ok, headers } = res;

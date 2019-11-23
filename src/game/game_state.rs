@@ -25,6 +25,7 @@ impl GameState {
         self.board = vec![vec![0; board_size]; board_size];
         self.board_size = board_size;
         self.player = player;
+        self.winner = 0;
     }
 
     pub fn play(&mut self, line: usize, col: usize) {
@@ -36,8 +37,8 @@ impl GameState {
             return;
         }
 
-        self.check_winner();
-        if self.winner != 0 {
+        if self.check_winner() {
+            self.winner = self.player;
             return;
         }
 
