@@ -65,7 +65,6 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
     }
 }
 
-
 #[derive(Serialize, Deserialize)]
 struct ResponseData {
     board: Vec<Vec<u8>>,
@@ -82,7 +81,7 @@ fn play(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
     let col = parse_param(&col_param)?;
 
     let mut state = state.lock().unwrap();
-    state.place_stone(line, col)?;
+    state.play(line, col);
 
     get_response_data(&state)
 }
@@ -125,7 +124,7 @@ fn get_response_data(state: &GameState) -> Option<String> {
 fn parse_param(param: &str) -> Option<usize> {
     match param.parse::<usize>() {
         Ok(v) => Some(v),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -160,4 +159,3 @@ fn get_static_asset(path: &str) -> Result<Vec<u8>, std::io::Error> {
 
     Ok(fs::read(entry)?)
 }
-
