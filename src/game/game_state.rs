@@ -1,12 +1,13 @@
 use crate::game::board;
 
+pub struct Stone(pub usize, pub usize);
+
 pub struct GameState {
     pub board: Vec<Vec<u8>>,
     pub player: u8,
     pub winner: u8,
     board_size: usize,
-    line: usize,
-    col: usize,
+    stone: Stone,
 }
 
 impl GameState {
@@ -14,8 +15,7 @@ impl GameState {
         GameState {
             board: vec![],
             winner: 0,
-            line: 0,
-            col: 0,
+            stone: Stone(0, 0),
             board_size: 0,
             player: 0,
         }
@@ -37,8 +37,7 @@ impl GameState {
             None
         } else {
             self.board[line][col] = self.player;
-            self.line = line;
-            self.col = col;
+            self.stone = Stone(line, col);
             if self.check_winner() == true {
                 self.winner = self.player;
             }
@@ -53,20 +52,44 @@ impl GameState {
 
     pub fn check_winner(&self) -> bool {
         [
-            board::check_horizontal_alignment,
-            board::check_vertical_alignment,
-            board::check_diagonal_left_alignment,
-            board::check_diagonal_right_alignment,
+            ("bot_left", "top_right"),
+            ("left", "right"),
+            ("top", "bot"),
+            ("top_left", "bot_right"),
         ]
         .iter()
-        .any(|f| {
-            f(
+        .any(|actions| {
+            board::check_alignment(
                 &self.board,
-                self.line,
-                self.col,
+                &self.stone,
                 self.player,
                 self.board_size,
+                actions.0,
+                actions.1,
             ) == true
         })
     }
+
+    //    pub fn captures_all(&self) -> {
+    //        let mut i = 0;
+    //        let mut captures: i32 = 0;
+    //        self.capture();
+    //        let t: Stone = (5, 4);;
+    //
+    //        return captures;
+    //    }
+    //
+    //    pub fn capture(&self) -> i32 {
+    //        let other_player = switch_player(player);
+    //        let capture_one: Stone = f(index as i32);
+    //        let capture_two: Stone = f(capture_one);
+    //        let capture_final: Stone = f(capture_two);
+    //        if capture_final == player {
+    //            if capture_one == other_player && capture_two == other_player {
+    //                return (capture_one, capture_two);
+    //            }
+    //        }
+    //
+    //        return (-1, -1);
+    //    }
 }
