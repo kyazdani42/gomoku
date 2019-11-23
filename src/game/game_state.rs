@@ -28,7 +28,12 @@ impl GameState {
     }
 
     pub fn place_stone(&mut self, line: usize, col: usize) -> Option<()> {
-        if self.board[line][col] != 0 {
+        if line < 0
+            || line >= self.board_size
+            || col < 0
+            || col >= self.board_size
+            || self.board[line][col] != 0
+        {
             None
         } else {
             self.board[line][col] = self.player;
