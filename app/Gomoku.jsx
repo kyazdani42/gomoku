@@ -1,44 +1,68 @@
-import React, { useReducer } from "react";
+import React, { useEffect, useState } from 'react';
 
-import { Board } from "./Board";
+import { Board } from './Board';
+import { GameSelection } from './GameSelection';
 // import { Info } from "./Info";
 
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "PLAY":
-      if (state.board[action.payload] !== 0) return state;
-      const newBoard = state.board.slice();
-      newBoard[action.payload] = state.player;
-      return {
-        ...state,
-        player: state.player === 1 ? 2 : 1,
-        board: newBoard
-      };
-    default:
-      return state;
-  }
-};
-
-const initialState = {
-  board: new Array(19 * 19).fill(0),
-  player: 1
-};
-
 export const Gomoku = () => {
-  // TEMPORARY
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, setState] = useState(null);
+  const [error, setError] = useState(null);
+  const [positions, setPositions] = useState(null);
+  const [initParam, setInitParam] = useState(null);
 
-  // useEffect to get initial data
-  // return GameSelection
+  useEffect(() => {
+    if (initParam) handleInit(initParam, setState, setError);
+  }, [initParam]);
 
+  useEffect(() => {
+    if (positions) handlePlay(positions, setState, setError);
+  }, [positions]);
+
+  if (!state) return <GameSelection setInitParam={setInitParam} />;
+
+  console.log(state);
   return (
     <div style={{ paddingTop: '50px' }}>
       <Board
-        board={state.board}
+        board={state.board.flat()}
         player={state.player}
-        onClick={payload => dispatch({ type: "PLAY", payload })}
+        onClick={payload =>
+          setPositions({
+            line: Math.floor(payload / state.board.length),
+            col: Math.floor(payload % state.board.length)
+          })
+        }
       />
       {/* <Info /> */}
     </div>
   );
 };
+
+const handleInit = async (initParam, setState, setError) => {
+  const { ia, size } = initParam;
+  const res = await fetch(getInitUrl({ ia, size }));
+  const { ok, headers } = res;
+  if (ok && headers.get('Content-Type') === 'application/json') {
+    setState(await res.json());
+  } else {
+    setError();
+  }
+};
+
+const URL = 'http://localhost:3001';
+
+const getInitUrl = ({ ia, size }) => `${URL}/init?ia=${ia}&size=${size}`;
+
+const handlePlay = async (positions, setState, setError) => {
+  console.log(positions);
+  const { line, col } = positions;
+  const res = await fetch(getPlayUrl({ line, col }));
+  const { ok, headers } = res;
+  if (ok && headers.get('Content-Type') === 'application/json') {
+    setState(await res.json());
+  } else {
+    setError();
+  }
+};
+
+const getPlayUrl = ({ line, col }) => `${URL}/play?line=${line}&col=${col}`;

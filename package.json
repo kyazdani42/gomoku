@@ -5,6 +5,7 @@
   "main": "index.jsx",
   "scripts": {
     "dev": "parcel serve --port 3000 ./app/index.html",
+    "watchBuild": "parcel watch ./app/index.html --no-source-maps --out-dir public",
     "build": "parcel build ./app/index.html --no-source-maps --out-dir public"
   },
   "author": "kyazdani & vguillem",
@@ -20,5 +21,8 @@
     "babel-preset-esnext": "^1.1.3",
     "babel-preset-react": "^6.24.1",
     "react-hot-loader": "^4.12.18"
-  }
+  },
+  "browserslist": [
+    "last 1 Chrome version"
+  ]
 }
