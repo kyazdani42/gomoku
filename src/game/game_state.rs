@@ -6,6 +6,8 @@ pub struct GameState {
     pub board: Vec<Vec<u8>>,
     pub player: u8,
     pub winner: u8,
+    pub player_one_captured: u8,
+    pub player_two_captured: u8,
     board_size: usize,
     stone: Stone,
 }
@@ -15,6 +17,8 @@ impl GameState {
         GameState {
             board: vec![],
             winner: 0,
+            player_one_captured: 0,
+            player_two_captured: 0,
             stone: Stone(0, 0),
             board_size: 0,
             player: 0,
@@ -22,10 +26,15 @@ impl GameState {
     }
 
     pub fn init(&mut self, board_size: usize, player: u8) {
-        self.board = vec![vec![0; board_size]; board_size];
-        self.board_size = board_size;
-        self.player = player;
-        self.winner = 0;
+        *self = GameState {
+            board: vec![vec![0; board_size]; board_size],
+            winner: 0,
+            player_one_captured: 0,
+            player_two_captured: 0,
+            stone: Stone(0, 0),
+            board_size,
+            player,
+        };
     }
 
     pub fn play(&mut self, line: usize, col: usize) {
@@ -37,12 +46,12 @@ impl GameState {
             return;
         }
 
+        self.capture_all();
+
         if self.check_winner() {
             self.winner = self.player;
-            return;
         }
 
-        self.capture_all();
         self.player = self.switch_player();
     }
 
@@ -65,23 +74,25 @@ impl GameState {
     }
 
     pub fn check_winner(&self) -> bool {
-        [
-            ("bot_left", "top_right"),
-            ("left", "right"),
-            ("top", "bot"),
-            ("top_left", "bot_right"),
-        ]
-        .iter()
-        .any(|actions| {
-            board::check_alignment(
-                &self.board,
-                &self.stone,
-                self.player,
-                self.board_size,
-                actions.0,
-                actions.1,
-            ) == true
-        })
+        (self.player == 1 && self.player_one_captured == 10)
+            || (self.player == 2 && self.player_two_captured == 10)
+            || [
+                ("bot_left", "top_right"),
+                ("left", "right"),
+                ("top", "bot"),
+                ("top_left", "bot_right"),
+            ]
+            .iter()
+            .any(|actions| {
+                board::check_alignment(
+                    &self.board,
+                    &self.stone,
+                    self.player,
+                    self.board_size,
+                    actions.0,
+                    actions.1,
+                ) == true
+            })
     }
 
     pub fn capture_all(&mut self) {
@@ -126,6 +137,11 @@ impl GameState {
             if self.get_player(&stone) == self.player {
                 self.board[stone_one.0][stone_one.1] = 0;
                 self.board[stone_two.0][stone_two.1] = 0;
+                if self.player == 1 {
+                    self.player_one_captured += 2;
+                } else {
+                    self.player_two_captured += 2;
+                }
             }
         };
     }
