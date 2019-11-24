@@ -77,10 +77,10 @@ impl GameState {
         (self.player == 1 && self.player_one_captured == 10)
             || (self.player == 2 && self.player_two_captured == 10)
             || [
-                ("bot_left", "top_right"),
-                ("left", "right"),
-                ("top", "bot"),
-                ("top_left", "bot_right"),
+                ["bot_left", "top_right"],
+                ["left", "right"],
+                ["top", "bot"],
+                ["top_left", "bot_right"],
             ]
             .iter()
             .any(|actions| {
@@ -89,8 +89,7 @@ impl GameState {
                     &self.stone,
                     self.player,
                     self.board_size,
-                    actions.0,
-                    actions.1,
+                    *actions,
                 ) == true
             })
     }
