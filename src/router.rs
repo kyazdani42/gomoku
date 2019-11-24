@@ -1,6 +1,6 @@
 extern crate hyper;
 
-use hyper::header::CONTENT_TYPE;
+use hyper::header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE};
 use hyper::rt::{lazy, Future};
 use hyper::{Body, Error, Method, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,7 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
         "/init" => match handle_initialization(uri.query(), state) {
             Some(val) => Ok(Response::builder()
                 .header(CONTENT_TYPE, "application/json")
+                .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .status(StatusCode::OK)
                 .body(Body::from(val))
                 .unwrap()),
@@ -44,6 +45,7 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
         "/play" => match play(uri.query(), state) {
             Some(val) => Ok(Response::builder()
                 .header(CONTENT_TYPE, "application/json")
+                .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .status(StatusCode::OK)
                 .body(Body::from(val))
                 .unwrap()),
