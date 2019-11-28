@@ -1,4 +1,4 @@
-use crate::game::board;
+use crate::game::{board, ACTIONS, JOINED_ACTIONS};
 
 pub struct Stone(pub usize, pub usize);
 
@@ -74,40 +74,34 @@ impl GameState {
     }
 
     pub fn check_winner(&self) -> bool {
-        (self.player == 1 && self.player_one_captured == 10)
-            || (self.player == 2 && self.player_two_captured == 10)
-            || [
-                ["bot_left", "top_right"],
-                ["left", "right"],
-                ["top", "bot"],
-                ["top_left", "bot_right"],
-            ]
-            .iter()
-            .any(|actions| {
-                board::check_alignment(
-                    &self.board,
-                    &self.stone,
-                    self.player,
-                    self.board_size,
-                    *actions,
-                ) == true
-            })
+        self.win_by_capture() || self.win_by_alignment()
+    }
+
+    fn win_by_capture(&self) -> bool {
+        if self.player == 1 {
+            self.player_one_captured == 10
+        } else {
+            self.player_two_captured == 10
+        }
+    }
+
+    fn win_by_alignment(&self) -> bool {
+        JOINED_ACTIONS.iter().any(|actions| {
+            board::check_alignment(
+                &self.board,
+                &self.stone,
+                self.player,
+                self.board_size,
+                *actions,
+            ) == true
+        })
     }
 
     pub fn capture_all(&mut self) {
         let other_player = self.switch_player();
-        [
-            "bot_left",
-            "top_right",
-            "left",
-            "right",
-            "top",
-            "bot",
-            "top_left",
-            "bot_right",
-        ]
-        .iter()
-        .for_each(|action| self.capture(action, &other_player));
+        ACTIONS
+            .iter()
+            .for_each(|action| self.capture(action, &other_player));
     }
 
     fn capture(&mut self, action: &str, other_player: &u8) {

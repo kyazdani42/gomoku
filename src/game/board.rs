@@ -1,16 +1,20 @@
-pub use super::game_state::Stone;
+use crate::game::game_state::Stone;
+use crate::game::JOINED_ACTIONS;
 
 pub fn check_alignment(
     board: &Vec<Vec<u8>>,
     stone: &Stone,
     player: u8,
     board_size: usize,
-    actions: [&str; 2],
+    actions: &str,
 ) -> bool {
-    4 < actions.iter().fold(1, |mut stones, action| {
-        stones += get_aligned_stones(board, stone, player, board_size, action);
-        stones
-    })
+    4 < actions
+        .split('|')
+        .into_iter()
+        .fold(1, |mut stones, action| {
+            stones += get_aligned_stones(board, stone, player, board_size, action, actions);
+            stones
+        })
 }
 
 fn get_aligned_stones(
@@ -19,6 +23,7 @@ fn get_aligned_stones(
     player: u8,
     board_size: usize,
     action: &str,
+    actions: &str,
 ) -> i32 {
     let mut new_stone = move_stone(&stone, board_size, action);
     let mut stones = 0;
@@ -27,10 +32,28 @@ fn get_aligned_stones(
         if board[next_stone.0][next_stone.1] != player {
             break;
         }
+        if is_capturable(&next_stone, board, player, actions) {
+            break;
+        }
         stones += 1;
         new_stone = move_stone(&next_stone, board_size, action);
     }
     stones
+}
+
+fn get_all_moves(actions: &str) -> Vec<&str> {
+    JOINED_ACTIONS
+        .iter()
+        .map(|x| *x)
+        .filter(|x| *x != actions)
+        .collect::<Vec<&str>>()
+}
+
+fn is_capturable(stone: &Stone, board: &Vec<Vec<u8>>, player: u8, actions: &str) -> bool {
+    get_all_moves(actions).iter().any(|actions| {
+        false
+        // TODO: check around
+    })
 }
 
 pub fn move_stone(stone: &Stone, board_size: usize, dir: &str) -> Option<Stone> {
@@ -110,7 +133,7 @@ mod test {
                 vec![0, 1, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 2), 1, 4, ["left", "right"]),
+                check_alignment(&vec, &Stone(1, 2), 1, 4, "left|right"),
                 false
             );
         }
@@ -125,7 +148,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 2), 1, 5, ["left", "right"]),
+                check_alignment(&vec, &Stone(1, 2), 1, 5, "left|right"),
                 true
             );
         }
@@ -140,7 +163,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 0), 1, 5, ["left", "right"]),
+                check_alignment(&vec, &Stone(1, 0), 1, 5, "left|right"),
                 true
             );
         }
@@ -155,7 +178,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 4), 1, 5, ["left", "right"]),
+                check_alignment(&vec, &Stone(1, 4), 1, 5, "left|right"),
                 true
             );
         }
@@ -172,10 +195,7 @@ mod test {
                 vec![0, 1, 0, 0],
                 vec![0, 1, 0, 0],
             ];
-            assert_eq!(
-                check_alignment(&vec, &Stone(1, 1), 1, 4, ["top", "bot"]),
-                false
-            );
+            assert_eq!(check_alignment(&vec, &Stone(1, 1), 1, 4, "top|bot"), false);
         }
 
         #[test]
@@ -187,10 +207,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
                 vec![0, 1, 0, 0, 0],
             ];
-            assert_eq!(
-                check_alignment(&vec, &Stone(1, 1), 1, 5, ["top", "bot"]),
-                true
-            );
+            assert_eq!(check_alignment(&vec, &Stone(1, 1), 1, 5, "top|bot"), true);
         }
 
         #[test]
@@ -202,10 +219,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
                 vec![0, 1, 0, 0, 0],
             ];
-            assert_eq!(
-                check_alignment(&vec, &Stone(0, 1), 1, 5, ["top", "bot"]),
-                true
-            );
+            assert_eq!(check_alignment(&vec, &Stone(0, 1), 1, 5, "top|bot"), true);
         }
 
         #[test]
@@ -217,10 +231,7 @@ mod test {
                 vec![0, 1, 0, 0, 0],
                 vec![0, 1, 0, 0, 0],
             ];
-            assert_eq!(
-                check_alignment(&vec, &Stone(4, 1), 1, 5, ["top", "bot"]),
-                true
-            );
+            assert_eq!(check_alignment(&vec, &Stone(4, 1), 1, 5, "top|bot"), true);
         }
     }
 
@@ -236,7 +247,7 @@ mod test {
                 vec![0, 1, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 2), 1, 4, ["top_left", "bot_right"]),
+                check_alignment(&vec, &Stone(1, 2), 1, 4, "top_left|bot_right"),
                 false
             );
         }
@@ -251,7 +262,7 @@ mod test {
                 vec![0, 1, 0, 0, 1],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(2, 2), 1, 5, ["top_left", "bot_right"]),
+                check_alignment(&vec, &Stone(2, 2), 1, 5, "top_left|bot_right"),
                 true
             );
         }
@@ -266,7 +277,7 @@ mod test {
                 vec![0, 1, 0, 0, 1],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(0, 0), 1, 5, ["top_left", "bot_right"]),
+                check_alignment(&vec, &Stone(0, 0), 1, 5, "top_left|bot_right"),
                 true
             );
         }
@@ -281,7 +292,7 @@ mod test {
                 vec![0, 1, 0, 0, 1],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(4, 4), 1, 5, ["top_left", "bot_right"]),
+                check_alignment(&vec, &Stone(4, 4), 1, 5, "top_left|bot_right"),
                 true
             );
         }
@@ -299,7 +310,7 @@ mod test {
                 vec![1, 1, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(1, 2), 1, 4, ["bot_left", "top_right"]),
+                check_alignment(&vec, &Stone(1, 2), 1, 4, "bot_left|top_right"),
                 false
             );
         }
@@ -314,7 +325,7 @@ mod test {
                 vec![1, 1, 0, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(2, 2), 1, 5, ["bot_left", "top_right"]),
+                check_alignment(&vec, &Stone(2, 2), 1, 5, "bot_left|top_right"),
                 true
             );
         }
@@ -329,7 +340,7 @@ mod test {
                 vec![1, 1, 0, 0, 1],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(4, 0), 1, 5, ["bot_left", "top_right"]),
+                check_alignment(&vec, &Stone(4, 0), 1, 5, "bot_left|top_right"),
                 true
             );
         }
@@ -344,7 +355,7 @@ mod test {
                 vec![1, 0, 0, 0, 0],
             ];
             assert_eq!(
-                check_alignment(&vec, &Stone(0, 4), 1, 5, ["bot_left", "top_right"]),
+                check_alignment(&vec, &Stone(0, 4), 1, 5, "bot_left|top_right"),
                 true
             );
         }
