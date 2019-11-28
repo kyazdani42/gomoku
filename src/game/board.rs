@@ -50,10 +50,56 @@ fn get_all_moves(actions: &str) -> Vec<&str> {
 }
 
 fn is_capturable(stone: &Stone, board: &Vec<Vec<u8>>, player: u8, actions: &str) -> bool {
+    let other_player = if player == 1 { 2 } else { 1 };
     get_all_moves(actions).iter().any(|actions| {
+        let actions = actions.split('|').into_iter().collect::<Vec<&str>>();
+
+        if let Some(stone_side) = move_stone(stone, board.len(), actions[0]) {
+            if let Some(stone_oside) = move_stone(stone, board.len(), actions[1]) {
+                let value_side = board[stone_side.0][stone_side.1];
+                let value_oside = board[stone_oside.0][stone_oside.1];
+
+                if value_side == player
+                    && check_place_capture(
+                        board,
+                        &stone_side,
+                        value_oside,
+                        actions[0],
+                        other_player,
+                    )
+                {
+                    return true;
+                }
+                if value_oside == player
+                    && check_place_capture(
+                        board,
+                        &stone_oside,
+                        value_side,
+                        actions[1],
+                        other_player,
+                    )
+                {
+                    return true;
+                };
+            }
+        };
+
         false
-        // TODO: check around
     })
+}
+
+fn check_place_capture(
+    board: &Vec<Vec<u8>>,
+    stone: &Stone,
+    value: u8,
+    action: &str,
+    player: u8,
+) -> bool {
+    if let Some(Stone(x, y)) = move_stone(stone, board.len(), action) {
+        let value_2 = board[x][y];
+        return (value == 0 && value_2 == player) || (value == player && value_2 == 0);
+    }
+    false
 }
 
 pub fn move_stone(stone: &Stone, board_size: usize, dir: &str) -> Option<Stone> {
@@ -182,6 +228,36 @@ mod test {
                 true
             );
         }
+
+        #[test]
+        fn test_false_from_capture() {
+            let vec = vec![
+                vec![0, 0, 0, 2, 0],
+                vec![1, 1, 1, 1, 1],
+                vec![0, 1, 0, 0, 0],
+                vec![0, 1, 0, 0, 0],
+                vec![0, 1, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_alignment(&vec, &Stone(1, 4), 1, 5, "left|right"),
+                false
+            );
+        }
+
+        #[test]
+        fn test_capture_occupied() {
+            let vec = vec![
+                vec![0, 0, 2, 2, 0],
+                vec![1, 1, 1, 1, 1],
+                vec![1, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0],
+                vec![0, 1, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_alignment(&vec, &Stone(1, 4), 1, 5, "left|right"),
+                true
+            );
+        }
     }
 
     mod test_vertical_alignment {
@@ -232,6 +308,18 @@ mod test {
                 vec![0, 1, 0, 0, 0],
             ];
             assert_eq!(check_alignment(&vec, &Stone(4, 1), 1, 5, "top|bot"), true);
+        }
+
+        #[test]
+        fn test_false_from_capture() {
+            let vec = vec![
+                vec![2, 1, 0, 0, 0],
+                vec![0, 1, 0, 1, 1],
+                vec![0, 1, 1, 0, 0],
+                vec![0, 1, 0, 0, 0],
+                vec![0, 1, 0, 0, 0],
+            ];
+            assert_eq!(check_alignment(&vec, &Stone(4, 1), 1, 5, "top|bot"), false);
         }
     }
 
