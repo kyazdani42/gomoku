@@ -102,6 +102,276 @@ fn check_place_capture(
     false
 }
 
+pub fn check_double_free_threes(
+    board: &Vec<Vec<u8>>,
+    stone: &Stone,
+    player: u8,
+    board_size: usize,
+) -> bool {
+
+    let mut free_threes = 0;
+
+    let actions = [
+        ["bot_left", "top_right"],
+        ["left", "right"],
+        ["top", "bot"],
+        ["top_left", "bot_right"],
+        ["bot_right", "top_left"],
+        ["bot", "top"],
+        ["right", "left"],
+        ["top_right", "bot_left"],
+    ];
+    let mut i = 0;
+    while i < 8 {
+        if is_free_threes(
+            board,
+            stone,
+            player,
+            board_size,
+            actions[i][0],
+            actions[i][1],
+                i > 3
+        ) {
+
+            free_threes += 1;
+        }
+        println!("{}", free_threes);
+        if free_threes == 2 {
+            return true;
+        }
+        i += 1;
+    }
+    free_threes > 1
+}
+
+// cas :
+// avant vide :
+    // suivant vide :
+        //suivant joueur
+            // suivant joueur
+                //suivant vide
+                    //FREE
+    // suivant joueur:
+        // suivant joueur
+            // suivant vide
+                // suivant joueur
+                    // suivant vide
+                        //FREE
+            // suivant joueur
+                // suivant vide
+                    // FREE
+// avant joueur
+    // avant vide
+        // suivant joueur
+            // suivant vide
+                //FREE
+        //suivant vide
+            //suivant joueur
+                //suivant vide
+                    //FREE
+
+
+//previous vide
+    //next joueur
+        //next vide
+            //next joueur
+                //next vide
+                    //FREE
+        //next joueur
+            //next vide
+                //FREE
+
+
+    //next vide
+        //next joueur
+            //next joueur
+                //next vide
+                    //FREE
+
+
+
+pub fn is_free_threes(
+    board: &Vec<Vec<u8>>,
+    stone: &Stone,
+    player: u8,
+    board_size: usize,
+    action_one: &str,
+    action_two: &str,
+    second_check: bool,
+) -> bool {
+    let mut previous = move_stone(&stone, board_size, action_one);
+    let mut next = move_stone(&stone, board_size, action_two);
+    match previous {
+        Some(stone) => {
+            if board[stone.0][stone.1] == 0 {
+                match next {
+                    Some(stone) => {
+                        if board[stone.0][stone.1] == 0 {
+                            next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                            match next {
+                                Some(stone) => {
+                                    if board[stone.0][stone.1] == player {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == player {
+                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                                    match next {
+                                                        Some(stone) => {
+                                                            if board[stone.0][stone.1] == 0 {
+                                                                return true;
+                                                            }
+                                                        }
+                                                        None => return false
+                                                    }
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    }
+                                }
+                                None => return false
+                            }
+                        } else if board[stone.0][stone.1] == player {
+                            next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                            match next {
+                                Some(stone) => {
+                                    if board[stone.0][stone.1] == player {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == 0 {
+                                                    return true;
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    } else if board[stone.0][stone.1] == 0 {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == player {
+                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                                    match next {
+                                                        Some(stone) => {
+                                                            if board[stone.0][stone.1] == 0 {
+                                                                return true;
+                                                            }
+                                                        }
+                                                        None => return false
+                                                    }
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    }
+                                }
+                                None => return false
+                            }
+                        }
+                    }
+                    None => return false,
+                };
+            } else if board[stone.0][stone.1] == player {
+                previous = move_stone(&Stone(stone.0, stone.1), board_size, action_one);
+                match previous {
+                    Some(stone) => {
+                        if board[stone.0][stone.1] == 0 {
+                            match next {
+                                Some(stone) => {
+                                    if board[stone.0][stone.1] == player {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == 0 {
+                                                    return !second_check && true;
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    } else if board[stone.0][stone.1] == 0 {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == player {
+                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                                    match next {
+                                                        Some(stone) => {
+                                                            if board[stone.0][stone.1] == 0 {
+                                                                return true;
+                                                            }
+                                                        }
+                                                        None => return false
+                                                    }
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    }
+                                }
+                                None => return false
+                            }
+                        }
+                    }
+                    None => return false
+                }
+            }
+        }
+        None => return false,
+    };
+    false
+}
+
+pub fn check_free_threes(
+    board: &Vec<Vec<u8>>,
+    stone: &Stone,
+    player: u8,
+    board_size: usize,
+    action_one: &str,
+    action_two: &str,
+) -> bool {
+    let mut empty_stone = 2;
+    let mut next = move_stone(&stone, board_size, action_two);
+
+    let mut i = 0;
+
+    while i < 4 {
+        match next {
+            Some(stone) => {
+                if board[stone.0][stone.1] == 0  {
+                    if empty_stone == 0 || i == 0 {
+                        return false;
+                    }
+                    if i != 3  {
+                        empty_stone -= 1;
+                    }
+                } else if board[stone.0][stone.1] != player{
+                    return false;
+                }
+                next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+            }
+            None => return false,
+        };
+
+        i+=1;
+    }
+
+    if empty_stone < 1 {
+        return false;
+    }
+    if empty_stone == 1{
+        match next {
+            Some(stone) => {
+                if board[stone.0][stone.1] != 0 {
+                    return false;
+                }
+            }
+            None => return false,
+        };
+    }
+    true
+}
+
 pub fn move_stone(stone: &Stone, board_size: usize, dir: &str) -> Option<Stone> {
     match dir {
         "left" => {
@@ -445,6 +715,153 @@ mod test {
             assert_eq!(
                 check_alignment(&vec, &Stone(0, 4), 1, 5, "bot_left|top_right"),
                 true
+            );
+        }
+    }
+
+    mod two_free_threes {
+        use super::{check_double_free_threes, Stone};
+
+        #[test]
+        fn test_true_one() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 1, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 8),
+                true
+            );
+        }
+        #[test]
+        fn test_false_tow_protect() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 2, 1, 1, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 8),
+                false
+            );
+        }
+        #[test]
+        fn test_true_diagonal() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 1, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                true
+            );
+        }
+        #[test]
+        fn test_false_diagonal_two_protect() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 1, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 2],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
+            );
+        }
+        #[test]
+        fn test_false_diagonal_one() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 1, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 1, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
+            );
+        }
+        #[test]
+        fn test_false_diagonal() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 1, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 1, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 2],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
+            );
+        }
+        #[test]
+        fn test_false_line() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 1, 1, 1, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
+            );
+        }
+        #[test]
+        fn test_false_line_one() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 1, 1, 1, 0, 1, 2],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
             );
         }
     }
