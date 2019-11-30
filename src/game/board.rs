@@ -144,21 +144,6 @@ pub fn check_double_free_threes(
 }
 
 // cas :
-// avant vide :
-    // suivant vide :
-        //suivant joueur
-            // suivant joueur
-                //suivant vide
-                    //FREE
-    // suivant joueur:
-        // suivant joueur
-            // suivant vide
-                // suivant joueur
-                    // suivant vide
-                        //FREE
-            // suivant joueur
-                // suivant vide
-                    // FREE
 // avant joueur
     // avant vide
         // suivant joueur
@@ -200,124 +185,84 @@ pub fn is_free_threes(
 ) -> bool {
     let mut previous = move_stone(&stone, board_size, action_one);
     let mut next = move_stone(&stone, board_size, action_two);
-    match previous {
-        Some(stone) => {
-            if board[stone.0][stone.1] == 0 {
-                match next {
-                    Some(stone) => {
-                        if board[stone.0][stone.1] == 0 {
-                            next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                            match next {
-                                Some(stone) => {
-                                    if board[stone.0][stone.1] == player {
-                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                        match next {
-                                            Some(stone) => {
-                                                if board[stone.0][stone.1] == player {
-                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                                    match next {
-                                                        Some(stone) => {
-                                                            if board[stone.0][stone.1] == 0 {
-                                                                return true;
-                                                            }
-                                                        }
-                                                        None => return false
-                                                    }
-                                                }
-                                            }
-                                            None => return false
+    if let Some(stone) = previous {
+
+        if board[stone.0][stone.1] == 0 {
+            if let Some(stone) = next {
+                if board[stone.0][stone.1] == 0 {
+                    next = move_stone(&stone, board_size, action_two);
+                    if let Some(stone) = next {
+                        if board[stone.0][stone.1] == player {
+                            next = move_stone(&stone, board_size, action_two);
+                            if let Some(stone) = next {
+                                if board[stone.0][stone.1] == player {
+                                    next = move_stone(&stone, board_size, action_two);
+                                    if let Some(stone) = next {
+                                        if board[stone.0][stone.1] == 0 {
+                                            return true;
                                         }
                                     }
                                 }
-                                None => return false
-                            }
-                        } else if board[stone.0][stone.1] == player {
-                            next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                            match next {
-                                Some(stone) => {
-                                    if board[stone.0][stone.1] == player {
-                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                        match next {
-                                            Some(stone) => {
-                                                if board[stone.0][stone.1] == 0 {
-                                                    return true;
-                                                }
-                                            }
-                                            None => return false
-                                        }
-                                    } else if board[stone.0][stone.1] == 0 {
-                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                        match next {
-                                            Some(stone) => {
-                                                if board[stone.0][stone.1] == player {
-                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                                    match next {
-                                                        Some(stone) => {
-                                                            if board[stone.0][stone.1] == 0 {
-                                                                return true;
-                                                            }
-                                                        }
-                                                        None => return false
-                                                    }
-                                                }
-                                            }
-                                            None => return false
-                                        }
-                                    }
-                                }
-                                None => return false
                             }
                         }
                     }
-                    None => return false,
-                };
-            } else if board[stone.0][stone.1] == player {
-                previous = move_stone(&Stone(stone.0, stone.1), board_size, action_one);
-                match previous {
-                    Some(stone) => {
-                        if board[stone.0][stone.1] == 0 {
-                            match next {
-                                Some(stone) => {
-                                    if board[stone.0][stone.1] == player {
-                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                        match next {
-                                            Some(stone) => {
-                                                if board[stone.0][stone.1] == 0 {
-                                                    return !second_check && true;
-                                                }
-                                            }
-                                            None => return false
-                                        }
-                                    } else if board[stone.0][stone.1] == 0 {
-                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                        match next {
-                                            Some(stone) => {
-                                                if board[stone.0][stone.1] == player {
-                                                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                                    match next {
-                                                        Some(stone) => {
-                                                            if board[stone.0][stone.1] == 0 {
-                                                                return true;
-                                                            }
-                                                        }
-                                                        None => return false
-                                                    }
-                                                }
-                                            }
-                                            None => return false
+                } else if board[stone.0][stone.1] == player {
+                    next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                    if let Some(stone) = next {
+                        if board[stone.0][stone.1] == player {
+                            next = move_stone(&stone, board_size, action_two);
+                            if let Some(stone) = next {
+                                if board[stone.0][stone.1] == 0 {
+                                    return true;
+                                }
+                            }
+
+                        } else if board[stone.0][stone.1] == 0 {
+                            next = move_stone(&stone, board_size, action_two);
+                            if let Some(stone) = next {
+                                if board[stone.0][stone.1] == player {
+                                    next = move_stone(&stone, board_size, action_two);
+                                    if let Some(stone) = next {
+                                        if board[stone.0][stone.1] == 0 {
+                                            return true;
                                         }
                                     }
                                 }
-                                None => return false
                             }
                         }
                     }
-                    None => return false
+                }
+            };
+        } else if board[stone.0][stone.1] == player {
+            previous = move_stone(&stone, board_size, action_one);
+            if let Some(stone) = previous {
+                if board[stone.0][stone.1] == 0 {
+                    if let Some(stone) = next {
+                        if board[stone.0][stone.1] == player {
+                            next = move_stone(&stone, board_size, action_two);
+                            if let Some(stone) = next {
+                                if board[stone.0][stone.1] == 0 {
+                                    return !second_check && true;
+                                }
+                            }
+                        } else if board[stone.0][stone.1] == 0 {
+                            next = move_stone(&stone, board_size, action_two);
+                            if let Some(stone) = next {
+                                if board[stone.0][stone.1] == player {
+                                    next = move_stone(&stone, board_size, action_two);
+                                    if let Some(stone) = next {
+                                        if board[stone.0][stone.1] == 0 {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-        None => return false,
-    };
+    }
     false
 }
 

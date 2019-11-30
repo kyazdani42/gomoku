@@ -50,10 +50,12 @@ impl GameState {
 
     fn create_forbidden(&mut self) {
         self.forbidden = Vec::new();
-        for (iLine, line) in self.board.iter().enumerate() {
-            for (iCol, col) in line.iter().enumerate() {
-                if board::check_double_free_threes(&self.board, &Stone(iLine, iCol), self.player, self.board_size) {
-                    self.forbidden.push([iLine, iCol]);
+        for (i_line, line) in self.board.iter().enumerate() {
+            for (i_col, col) in line.iter().enumerate() {
+                if *col == 0 {
+                    if board::check_double_free_threes(&self.board, &Stone(i_line, i_col), self.player, self.board_size) {
+                        self.forbidden.push([i_line, i_col]);
+                    }
                 }
             }
         }
