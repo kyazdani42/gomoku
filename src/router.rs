@@ -137,7 +137,7 @@ fn get_response_data(state: &GameState) -> Option<String> {
         player: state.player,
         winner: state.winner,
         time: state.time,
-        ia: state.ia
+        ia: state.ia,
     };
     match serde_json::to_string(&data) {
         Ok(json) => Some(json),

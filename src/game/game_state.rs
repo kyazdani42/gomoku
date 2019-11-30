@@ -54,7 +54,13 @@ impl GameState {
             return;
         }
 
+        let (p1_captured, p2_captured) = (self.player_one_captured, self.player_two_captured);
         self.capture_all();
+        if p1_captured == self.player_one_captured && p2_captured == self.player_two_captured {
+            if board::check_double_free_threes(&self.board, &self.stone, self.player, self.board_size) {
+                return;
+            }
+        }
 
         if self.check_winner() {
             self.winner = self.player;

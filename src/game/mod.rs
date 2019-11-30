@@ -6,14 +6,14 @@ pub const JOINED_ACTIONS: [&str; 4] = [
 ];
 
 pub const ACTIONS: [&str; 8] = [
-            "bot_left",
-            "top_right",
-            "left",
-            "right",
-            "top",
-            "bot",
-            "top_left",
-            "bot_right",
+    "bot_left",
+    "top_right",
+    "left",
+    "right",
+    "top",
+    "bot",
+    "top_left",
+    "bot_right",
 ];
 
 pub mod board;
