@@ -245,7 +245,7 @@ const Forbidden = () => (
 const blockStyle = {
   width: '40px',
   height: '40px',
-  cursor: 'pointer'
+  cursor: 'none'
 };
 
 const lineStyle = {

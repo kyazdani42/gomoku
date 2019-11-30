@@ -74,6 +74,7 @@ impl GameState {
         self.capture_all();
         if p1_captured == self.player_one_captured && p2_captured == self.player_two_captured {
             if board::check_double_free_threes(&self.board, &self.stone, self.player, self.board_size) {
+                self.board[line][col] = 0;
                 return;
             }
         }
