@@ -1,4 +1,6 @@
+use std::time::Instant;
 use crate::game::{board, ACTIONS, JOINED_ACTIONS};
+use crate::algorithm;
 
 pub struct Stone(pub usize, pub usize);
 
@@ -8,6 +10,8 @@ pub struct GameState {
     pub winner: u8,
     pub player_one_captured: u8,
     pub player_two_captured: u8,
+    pub ia: u8,
+    pub time: u128,
     board_size: usize,
     stone: Stone,
 }
@@ -21,11 +25,13 @@ impl GameState {
             player_two_captured: 0,
             stone: Stone(0, 0),
             board_size: 0,
+            time: 0,
             player: 0,
+            ia: 0,
         }
     }
 
-    pub fn init(&mut self, board_size: usize, player: u8) {
+    pub fn init(&mut self, board_size: usize, player: u8, ia: u8) {
         *self = GameState {
             board: vec![vec![0; board_size]; board_size],
             winner: 0,
@@ -33,7 +39,9 @@ impl GameState {
             player_two_captured: 0,
             stone: Stone(0, 0),
             board_size,
+            time: 0,
             player,
+            ia,
         };
     }
 
@@ -53,6 +61,17 @@ impl GameState {
         }
 
         self.player = self.switch_player();
+    }
+
+    pub fn play_ia(&mut self) {
+        if self.winner != 0 || self.ia == 0 {
+            return;
+        }
+
+        let time = Instant::now();
+        let (line, col) = algorithm::compute(&self.board, &self.ia);
+        self.time = time.elapsed().as_nanos();
+        self.play(line, col);
     }
 
     pub fn place_stone(&mut self, line: usize, col: usize) -> Option<()> {

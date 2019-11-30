@@ -54,6 +54,18 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
                 .body(BADREQUEST.into())
                 .unwrap()),
         },
+        "/play_ia" => match play_ia(state) {
+            Some(val) => Ok(Response::builder()
+                .header(CONTENT_TYPE, "application/json")
+                .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                .status(StatusCode::OK)
+                .body(Body::from(val))
+                .unwrap()),
+            None => Ok(Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(INTERNAL_SERVER_ERROR.into())
+                .unwrap()),
+        },
         _ => match get_static_asset(uri.path()) {
             Ok(val) => Ok(Response::builder()
                 .status(StatusCode::OK)
@@ -67,13 +79,6 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct ResponseData {
-    board: Vec<Vec<u8>>,
-    player: u8,
-    winner: u8,
-}
-
 fn play(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
     let params = get_params(params)?;
     let line_param = find_param(&params, "line")?;
@@ -85,6 +90,12 @@ fn play(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
     let mut state = state.lock().unwrap();
     state.play(line, col);
 
+    get_response_data(&state)
+}
+
+fn play_ia(state: &Arc<Mutex<GameState>>) -> Option<String> {
+    let mut state = state.lock().unwrap();
+    state.play_ia();
     get_response_data(&state)
 }
 
@@ -104,11 +115,20 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) ->
         return None;
     }
 
-    // TODO: handle ia in state
     let mut state = state.lock().unwrap();
-    state.init(board_size, 1);
+    let player = if ia == 1 { 2 } else { 1 };
+    state.init(board_size, player, ia);
 
     get_response_data(&state)
+}
+
+#[derive(Serialize, Deserialize)]
+struct ResponseData {
+    board: Vec<Vec<u8>>,
+    player: u8,
+    winner: u8,
+    ia: u8,
+    time: u128,
 }
 
 fn get_response_data(state: &GameState) -> Option<String> {
@@ -116,6 +136,8 @@ fn get_response_data(state: &GameState) -> Option<String> {
         board: state.board.clone(),
         player: state.player,
         winner: state.winner,
+        time: state.time,
+        ia: state.ia
     };
     match serde_json::to_string(&data) {
         Ok(json) => Some(json),

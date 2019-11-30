@@ -6,6 +6,7 @@ use hyper::Server;
 use std::sync::{Arc, Mutex};
 
 mod game;
+mod algorithm;
 mod router;
 
 use game::game_state::GameState;
