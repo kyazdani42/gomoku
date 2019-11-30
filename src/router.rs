@@ -129,6 +129,7 @@ struct ResponseData {
     winner: u8,
     ia: u8,
     time: u128,
+    forbidden: Vec<[usize;2]>,
 }
 
 fn get_response_data(state: &GameState) -> Option<String> {
@@ -138,6 +139,7 @@ fn get_response_data(state: &GameState) -> Option<String> {
         winner: state.winner,
         time: state.time,
         ia: state.ia,
+        forbidden: state.forbidden.clone(),
     };
     match serde_json::to_string(&data) {
         Ok(json) => Some(json),

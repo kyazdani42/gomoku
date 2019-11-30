@@ -20,6 +20,12 @@ export const Gomoku = () => {
 
   if (!state) return <GameSelection setInitParam={setInitParam} />;
 
+  if (state.forbidden) {
+    state.forbidden.forEach(f => {
+      state.board[f[0]][f[1]] = 3;
+    })
+  }
+
   return (
     <div style={{ paddingTop: '50px' }}>
       <Board

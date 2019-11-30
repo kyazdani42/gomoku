@@ -14,6 +14,7 @@ pub struct GameState {
     pub time: u128,
     board_size: usize,
     stone: Stone,
+    pub forbidden: Vec<[usize;2]>,
 }
 
 impl GameState {
@@ -28,6 +29,7 @@ impl GameState {
             time: 0,
             player: 0,
             ia: 0,
+            forbidden: Vec::new(),
         }
     }
 
@@ -42,7 +44,19 @@ impl GameState {
             time: 0,
             player,
             ia,
+            forbidden: Vec::new(),
         };
+    }
+
+    fn create_forbidden(&mut self) {
+        self.forbidden = Vec::new();
+        for (iLine, line) in self.board.iter().enumerate() {
+            for (iCol, col) in line.iter().enumerate() {
+                if board::check_double_free_threes(&self.board, &Stone(iLine, iCol), self.player, self.board_size) {
+                    self.forbidden.push([iLine, iCol]);
+                }
+            }
+        }
     }
 
     pub fn play(&mut self, line: usize, col: usize) {
@@ -67,6 +81,7 @@ impl GameState {
         }
 
         self.player = self.switch_player();
+        self.create_forbidden();
     }
 
     pub fn play_ia(&mut self) {

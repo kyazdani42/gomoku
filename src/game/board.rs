@@ -135,7 +135,6 @@ pub fn check_double_free_threes(
 
             free_threes += 1;
         }
-        println!("{}", free_threes);
         if free_threes == 2 {
             return true;
         }
