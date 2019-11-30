@@ -108,9 +108,6 @@ pub fn check_double_free_threes(
     player: u8,
     board_size: usize,
 ) -> bool {
-    if board[stone.0][stone.1] != 0{
-        return false;
-    }
 
     let mut free_threes = 0;
 
@@ -125,19 +122,20 @@ pub fn check_double_free_threes(
         ["top_right", "bot_left"],
     ];
     let mut i = 0;
-    while i < 4 {
+    while i < 8 {
         if is_free_threes(
             board,
             stone,
             player,
             board_size,
             actions[i][0],
-            actions[i][1]
+            actions[i][1],
+                i > 3
         ) {
 
-            println!("{}", free_threes);
             free_threes += 1;
         }
+        println!("{}", free_threes);
         if free_threes == 2 {
             return true;
         }
@@ -172,6 +170,26 @@ pub fn check_double_free_threes(
                 //suivant vide
                     //FREE
 
+
+//previous vide
+    //next joueur
+        //next vide
+            //next joueur
+                //next vide
+                    //FREE
+        //next joueur
+            //next vide
+                //FREE
+
+
+    //next vide
+        //next joueur
+            //next joueur
+                //next vide
+                    //FREE
+
+
+
 pub fn is_free_threes(
     board: &Vec<Vec<u8>>,
     stone: &Stone,
@@ -179,6 +197,7 @@ pub fn is_free_threes(
     board_size: usize,
     action_one: &str,
     action_two: &str,
+    second_check: bool,
 ) -> bool {
     let mut previous = move_stone(&stone, board_size, action_one);
     let mut next = move_stone(&stone, board_size, action_two);
@@ -222,19 +241,21 @@ pub fn is_free_threes(
                                         match next {
                                             Some(stone) => {
                                                 if board[stone.0][stone.1] == 0 {
+                                                    return true;
+                                                }
+                                            }
+                                            None => return false
+                                        }
+                                    } else if board[stone.0][stone.1] == 0 {
+                                        next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
+                                        match next {
+                                            Some(stone) => {
+                                                if board[stone.0][stone.1] == player {
                                                     next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
                                                     match next {
                                                         Some(stone) => {
-                                                            if board[stone.0][stone.1] == player {
-                                                                next = move_stone(&Stone(stone.0, stone.1), board_size, action_two);
-                                                                match next {
-                                                                    Some(stone) => {
-                                                                        if board[stone.0][stone.1] == 0 {
-                                                                            return true;
-                                                                        }
-                                                                    }
-                                                                    None => return false
-                                                                }
+                                                            if board[stone.0][stone.1] == 0 {
+                                                                return true;
                                                             }
                                                         }
                                                         None => return false
@@ -263,7 +284,7 @@ pub fn is_free_threes(
                                         match next {
                                             Some(stone) => {
                                                 if board[stone.0][stone.1] == 0 {
-                                                    return true;
+                                                    return !second_check && true;
                                                 }
                                             }
                                             None => return false
@@ -702,7 +723,7 @@ mod test {
         use super::{check_double_free_threes, Stone};
 
         #[test]
-        fn test_true() {
+        fn test_true_one() {
             let vec = vec![
                 vec![0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 1, 0, 0, 0, 0, 0, 0],
@@ -740,6 +761,42 @@ mod test {
             let vec = vec![
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 1, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                true
+            );
+        }
+        #[test]
+        fn test_false_diagonal_two_protect() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 1, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 1, 0, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 1, 0],
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 2],
+            ];
+            assert_eq!(
+                check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
+                false
+            );
+        }
+        #[test]
+        fn test_false_diagonal_one() {
+            let vec = vec![
+                vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![0, 1, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 1, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 0, 1, 0, 0, 0, 0],
@@ -750,7 +807,7 @@ mod test {
             ];
             assert_eq!(
                 check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
-                true
+                false
             );
         }
         #[test]
@@ -772,7 +829,7 @@ mod test {
             );
         }
         #[test]
-        fn test_true_line() {
+        fn test_false_line() {
             let vec = vec![
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -786,11 +843,11 @@ mod test {
             ];
             assert_eq!(
                 check_double_free_threes(&vec, &Stone(4, 4), 1, 9),
-                true
+                false
             );
         }
         #[test]
-        fn test_false_line() {
+        fn test_false_line_one() {
             let vec = vec![
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
                 vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
