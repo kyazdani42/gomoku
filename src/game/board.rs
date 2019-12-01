@@ -222,62 +222,20 @@ fn check_free_pattern(
 
 pub fn move_stone(stone: &Stone, board_size: usize, dir: &str) -> Option<Stone> {
     match dir {
-        "left" => {
-            if stone.1 == 0 {
-                None
-            } else {
-                Some(Stone(stone.0, stone.1 - 1))
-            }
+        "left" if stone.1 != 0 => Some(Stone(stone.0, stone.1 - 1)),
+        "right" if stone.1 != board_size - 1 => Some(Stone(stone.0, stone.1 + 1)),
+        "top" if stone.0 != 0 => Some(Stone(stone.0 - 1, stone.1)),
+        "bot" if stone.0 != board_size - 1 => Some(Stone(stone.0 + 1, stone.1)),
+        "bot_right" if stone.0 != board_size - 1 && stone.1 != board_size - 1 => {
+            Some(Stone(stone.0 + 1, stone.1 + 1))
         }
-        "right" => {
-            if stone.1 == board_size - 1 {
-                None
-            } else {
-                Some(Stone(stone.0, stone.1 + 1))
-            }
+        "top_right" if stone.0 != 0 && stone.1 != board_size - 1 => {
+            Some(Stone(stone.0 - 1, stone.1 + 1))
         }
-        "top" => {
-            if stone.0 == 0 {
-                None
-            } else {
-                Some(Stone(stone.0 - 1, stone.1))
-            }
+        "bot_left" if stone.0 != board_size - 1 && stone.1 != 0 => {
+            Some(Stone(stone.0 + 1, stone.1 - 1))
         }
-        "bot" => {
-            if stone.0 == board_size - 1 {
-                None
-            } else {
-                Some(Stone(stone.0 + 1, stone.1))
-            }
-        }
-        "bot_right" => {
-            if stone.0 == board_size - 1 || stone.1 == board_size - 1 {
-                None
-            } else {
-                Some(Stone(stone.0 + 1, stone.1 + 1))
-            }
-        }
-        "top_right" => {
-            if stone.0 == 0 || stone.1 == board_size - 1 {
-                None
-            } else {
-                Some(Stone(stone.0 - 1, stone.1 + 1))
-            }
-        }
-        "bot_left" => {
-            if stone.0 == board_size - 1 || stone.1 == 0 {
-                None
-            } else {
-                Some(Stone(stone.0 + 1, stone.1 - 1))
-            }
-        }
-        "top_left" => {
-            if stone.0 == 0 || stone.1 == 0 {
-                None
-            } else {
-                Some(Stone(stone.0 - 1, stone.1 - 1))
-            }
-        }
+        "top_left" if stone.0 != 0 && stone.1 != 0 => Some(Stone(stone.0 - 1, stone.1 - 1)),
         _ => None,
     }
 }
