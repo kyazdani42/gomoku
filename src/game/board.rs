@@ -1,5 +1,4 @@
-use crate::game::game_state::Stone;
-use crate::game::JOINED_ACTIONS;
+use super::{Stone, JOINED_ACTIONS};
 
 pub fn check_alignment(
     board: &Vec<Vec<u8>>,

@@ -1,5 +1,6 @@
 use std::time::Instant;
-use crate::game::{board, ACTIONS, JOINED_ACTIONS};
+
+use super::{board, ACTIONS, JOINED_ACTIONS};
 use crate::algorithm;
 
 pub struct Stone(pub usize, pub usize);

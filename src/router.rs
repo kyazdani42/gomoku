@@ -1,13 +1,13 @@
-extern crate hyper;
+use std::fs;
+use std::sync::{Arc, Mutex};
 
 use hyper::header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE};
 use hyper::rt::{lazy, Future};
 use hyper::{Body, Error, Method, Request, Response, StatusCode};
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::sync::{Arc, Mutex};
 
-use crate::game::game_state::GameState;
+use serde::{Deserialize, Serialize};
+
+use crate::game::GameState;
 
 static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
 static NOTFOUND: &[u8] = b"Not Found";
@@ -129,7 +129,7 @@ struct ResponseData {
     winner: u8,
     ia: u8,
     time: u128,
-    forbidden: Vec<[usize;2]>,
+    forbidden: Vec<[usize; 2]>,
 }
 
 fn get_response_data(state: &GameState) -> Option<String> {
