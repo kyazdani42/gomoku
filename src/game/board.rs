@@ -16,7 +16,24 @@ pub fn check_alignment(
         })
 }
 
-fn get_aligned_stones(
+pub fn get_alignment(
+    board: &Vec<Vec<u8>>,
+    stone: &Stone,
+    player: u8,
+    board_size: usize,
+    actions: &str,
+) -> i32 {
+    actions
+        .split('|')
+        .into_iter()
+        .fold(1, |mut stones, action| {
+            let new_stones = get_aligned_stones(board, stone, player, board_size, action, actions);
+            stones += (new_stones * new_stones * new_stones * 100);
+            stones
+        })
+}
+
+pub fn get_aligned_stones(
     board: &Vec<Vec<u8>>,
     stone: &Stone,
     player: u8,

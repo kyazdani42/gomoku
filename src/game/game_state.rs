@@ -89,12 +89,12 @@ impl GameState {
     }
 
     pub fn play_ia(&mut self) {
-        if self.winner != 0 || self.ia == 0 {
-            return;
-        }
+//        if self.winner != 0 || self.ia == 0 {
+//            return;
+//        }
 
         let time = Instant::now();
-        let (line, col) = algorithm::compute(&self.board, &self.ia);
+        let (line, col) = algorithm::compute(&self.board, &self.player, self.board_size);
         self.time = time.elapsed().as_nanos();
         self.play(line, col);
     }

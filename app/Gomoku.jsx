@@ -47,6 +47,9 @@ export const Gomoku = () => {
         }}
       />
       {/* <Info /> */}
+      <button onClick={() => playIa(setState, setError)}>
+        Play Ia
+      </button>
     </div>
   );
 };
@@ -78,3 +81,15 @@ const handlePlay = async (positions, setState, setError) => {
 };
 
 const getPlayUrl = ({ line, col }) => `${URL}/play?line=${line}&col=${col}`;
+
+const getPlayIa = () => `${URL}/play_ia`;
+
+const playIa = async (setState, setError) => {
+  const res = await fetch(getPlayIa());
+  const { ok, headers } = res;
+  if (ok && headers.get('Content-Type') === 'application/json') {
+    setState(await res.json());
+  } else {
+    setError();
+  }
+}
