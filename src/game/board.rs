@@ -28,7 +28,7 @@ pub fn get_alignment(
         .into_iter()
         .fold(1, |mut stones, action| {
             let new_stones = get_aligned_stones(board, stone, player, board_size, action, actions);
-            stones += (new_stones * new_stones * new_stones * 100);
+            stones += new_stones * new_stones * new_stones * 100;
             stones
         })
 }

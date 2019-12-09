@@ -15,7 +15,6 @@ pub struct GameState {
     pub time: u128,
     board_size: usize,
     stone: Stone,
-    pub forbidden: Vec<[usize;2]>,
 }
 
 impl GameState {
@@ -30,7 +29,6 @@ impl GameState {
             time: 0,
             player: 0,
             ia: 0,
-            forbidden: Vec::new(),
         }
     }
 
@@ -45,17 +43,29 @@ impl GameState {
             time: 0,
             player,
             ia,
-            forbidden: Vec::new(),
         };
     }
 
-    fn create_forbidden(&mut self) {
-        self.forbidden = Vec::new();
-        for (i_line, line) in self.board.iter().enumerate() {
+    fn set_free_threes(&mut self) {
+        // we need to do this because we mutate the board later on
+        // and we cannot mutate the board when it's borrowed as
+        // immutable
+        let board = self.board.clone();
+        for (i_line, line) in board.iter().enumerate() {
             for (i_col, col) in line.iter().enumerate() {
-                if *col == 0 {
-                    if board::check_double_free_threes(&self.board, &Stone(i_line, i_col), self.player, self.board_size) {
-                        self.forbidden.push([i_line, i_col]);
+                // if its empty or a free three
+                if *col == 0 || *col == 3 {
+                    if board::check_double_free_threes(
+                        &self.board,
+                        &Stone(i_line, i_col),
+                        self.player,
+                        self.board_size,
+                    ) {
+                        self.board[i_line][i_col] = 3;
+                    } else {
+                        // reset board empty cases when
+                        // its not a free three anymore
+                        self.board[i_line][i_col] = 0;
                     }
                 }
             }
@@ -71,27 +81,24 @@ impl GameState {
             return;
         }
 
-        let (p1_captured, p2_captured) = (self.player_one_captured, self.player_two_captured);
         self.capture_all();
-        if p1_captured == self.player_one_captured && p2_captured == self.player_two_captured {
-            if board::check_double_free_threes(&self.board, &self.stone, self.player, self.board_size) {
-                self.board[line][col] = 0;
-                return;
-            }
-        }
 
         if self.check_winner() {
             self.winner = self.player;
         }
 
         self.player = self.switch_player();
-        self.create_forbidden();
+        // TODO:
+        // we must check if a player can capture on stone,
+        // it shouldn't create a free three, even if its supposedly a free three
+        // inside the set_free_threes functions
+        self.set_free_threes();
     }
 
     pub fn play_ia(&mut self) {
-//        if self.winner != 0 || self.ia == 0 {
-//            return;
-//        }
+        if self.winner != 0 || self.ia == 0 {
+            return;
+        }
 
         let time = Instant::now();
         let (line, col) = algorithm::compute(&self.board, &self.player, self.board_size);
