@@ -1,8 +1,8 @@
 use crate::game;
 
-use game::{get_alignment, Stone, JOINED_ACTIONS};
+use game::{get_aligned_stones, Board, Stone, JOINED_ACTIONS};
 
-pub fn compute(board: &Vec<Vec<u8>>, player: &u8, board_size: usize) -> (usize, usize) {
+pub fn compute(board: &Board, player: &u8, board_size: usize) -> (usize, usize) {
     let mut play_line = 0;
     let mut play_col = 0;
     let mut point = 0;
@@ -27,14 +27,14 @@ pub fn compute(board: &Vec<Vec<u8>>, player: &u8, board_size: usize) -> (usize, 
 }
 
 fn get_alignement_point(
-    board: &Vec<Vec<u8>>,
+    board: &Board,
     line: usize,
     col: usize,
     board_size: usize,
     player: u8,
 ) -> i32 {
     JOINED_ACTIONS.iter().fold(0, |mut points, actions| {
-        points += get_alignment(board, &Stone(line, col), player, board_size, *actions);
+        points += fake_heuristic(board, &Stone(line, col), player, board_size, *actions);
         points
     })
 }
@@ -52,4 +52,21 @@ fn get_basic_point(line: usize, col: usize, board_size: usize) -> i32 {
     } else {
         (line + col) as i32
     }
+}
+
+fn fake_heuristic(
+    board: &Board,
+    stone: &Stone,
+    player: u8,
+    board_size: usize,
+    actions: &str,
+) -> i32 {
+    actions
+        .split('|')
+        .into_iter()
+        .fold(1, |mut stones, action| {
+            let new_stones = get_aligned_stones(board, stone, player, board_size, action, actions);
+            stones += new_stones * new_stones * new_stones * 100;
+            stones
+        })
 }

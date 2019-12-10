@@ -1,7 +1,7 @@
-use super::{Stone, JOINED_ACTIONS};
+use super::{Board, Stone, JOINED_ACTIONS};
 
 pub fn check_alignment(
-    board: &Vec<Vec<u8>>,
+    board: &Board,
     stone: &Stone,
     player: u8,
     board_size: usize,
@@ -16,25 +16,8 @@ pub fn check_alignment(
         })
 }
 
-pub fn get_alignment(
-    board: &Vec<Vec<u8>>,
-    stone: &Stone,
-    player: u8,
-    board_size: usize,
-    actions: &str,
-) -> i32 {
-    actions
-        .split('|')
-        .into_iter()
-        .fold(1, |mut stones, action| {
-            let new_stones = get_aligned_stones(board, stone, player, board_size, action, actions);
-            stones += new_stones * new_stones * new_stones * 100;
-            stones
-        })
-}
-
 pub fn get_aligned_stones(
-    board: &Vec<Vec<u8>>,
+    board: &Board,
     stone: &Stone,
     player: u8,
     board_size: usize,
@@ -48,7 +31,7 @@ pub fn get_aligned_stones(
         if board[next_stone.0][next_stone.1] != player {
             break;
         }
-        if is_capturable(&next_stone, board, player, actions) {
+        if is_capturable(board, &next_stone, player, actions) {
             break;
         }
         stones += 1;
@@ -65,7 +48,7 @@ fn get_all_moves(actions: &str) -> Vec<&str> {
         .collect::<Vec<&str>>()
 }
 
-fn is_capturable(stone: &Stone, board: &Vec<Vec<u8>>, player: u8, actions: &str) -> bool {
+fn is_capturable(board: &Board, stone: &Stone, player: u8, actions: &str) -> bool {
     let other_player = if player == 1 { 2 } else { 1 };
     get_all_moves(actions).iter().any(|actions| {
         let actions = actions.split('|').into_iter().collect::<Vec<&str>>();
@@ -104,13 +87,7 @@ fn is_capturable(stone: &Stone, board: &Vec<Vec<u8>>, player: u8, actions: &str)
     })
 }
 
-fn check_place_capture(
-    board: &Vec<Vec<u8>>,
-    stone: &Stone,
-    value: u8,
-    action: &str,
-    player: u8,
-) -> bool {
+fn check_place_capture(board: &Board, stone: &Stone, value: u8, action: &str, player: u8) -> bool {
     if let Some(Stone(x, y)) = move_stone(stone, board.len(), action) {
         let value_2 = board[x][y];
         return (value == 0 && value_2 == player) || (value == player && value_2 == 0);
@@ -119,7 +96,7 @@ fn check_place_capture(
 }
 
 pub fn check_double_free_threes(
-    board: &Vec<Vec<u8>>,
+    board: &Board,
     stone: &Stone,
     player: u8,
     board_size: usize,
@@ -156,7 +133,7 @@ pub fn check_double_free_threes(
 }
 
 pub fn is_free_threes(
-    board: &Vec<Vec<u8>>,
+    board: &Board,
     stone: &Stone,
     player: u8,
     board_size: usize,
@@ -213,12 +190,7 @@ pub fn is_free_threes(
     false
 }
 
-fn check_free_pattern(
-    board: &Vec<Vec<u8>>,
-    stone: Option<Stone>,
-    pattern: Vec<u8>,
-    action: &str,
-) -> bool {
+fn check_free_pattern(board: &Board, stone: Option<Stone>, pattern: Vec<u8>, action: &str) -> bool {
     let mut next = stone;
     for (i, v) in pattern.iter().enumerate() {
         if let None = next {

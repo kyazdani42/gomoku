@@ -4,9 +4,10 @@ use super::{board, ACTIONS, JOINED_ACTIONS};
 use crate::algorithm;
 
 pub struct Stone(pub usize, pub usize);
+pub type Board = Vec<Vec<u8>>;
 
 pub struct GameState {
-    pub board: Vec<Vec<u8>>,
+    pub board: Board,
     pub player: u8,
     pub winner: u8,
     pub player_one_captured: u8,
@@ -46,32 +47,6 @@ impl GameState {
         };
     }
 
-    fn set_free_threes(&mut self) {
-        // we need to do this because we mutate the board later on
-        // and we cannot mutate the board when it's borrowed as
-        // immutable
-        let board = self.board.clone();
-        for (i_line, line) in board.iter().enumerate() {
-            for (i_col, col) in line.iter().enumerate() {
-                // if its empty or a free three
-                if *col == 0 || *col == 3 {
-                    if board::check_double_free_threes(
-                        &self.board,
-                        &Stone(i_line, i_col),
-                        self.player,
-                        self.board_size,
-                    ) {
-                        self.board[i_line][i_col] = 3;
-                    } else {
-                        // reset board empty cases when
-                        // its not a free three anymore
-                        self.board[i_line][i_col] = 0;
-                    }
-                }
-            }
-        }
-    }
-
     pub fn play(&mut self, line: usize, col: usize) {
         if self.winner != 0 {
             return;
@@ -88,10 +63,7 @@ impl GameState {
         }
 
         self.player = self.switch_player();
-        // TODO:
-        // we must check if a player can capture on stone,
-        // it shouldn't create a free three, even if its supposedly a free three
-        // inside the set_free_threes functions
+
         self.set_free_threes();
     }
 
@@ -106,12 +78,40 @@ impl GameState {
         self.play(line, col);
     }
 
+    fn set_free_threes(&mut self) {
+        // we need to do this because we mutate the board later on
+        // and we cannot mutate the board when it's borrowed as immutable
+        let board = self.board.clone();
+        for (i_line, line) in board.iter().enumerate() {
+            for (i_col, value) in line.iter().enumerate() {
+                // if its empty or a free three
+                if *value == 0 || *value == 3 {
+                    let stone = Stone(i_line, i_col);
+                    let is_double_free_three = board::check_double_free_threes(
+                        &self.board,
+                        &stone,
+                        self.player,
+                        self.board_size,
+                    );
+
+                    // TODO: if the player can capture, do not set the value
+                    if is_double_free_three {
+                        self.set_value(&stone, 3);
+                    } else if *value == 3 {
+                        self.set_value(&stone, 0);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn place_stone(&mut self, line: usize, col: usize) -> Option<()> {
-        if line >= self.board_size || col >= self.board_size || self.board[line][col] != 0 {
+        let stone = Stone(line, col);
+        if line >= self.board_size || col >= self.board_size || self.get_value(&stone) != 0 {
             None
         } else {
-            self.board[line][col] = self.player;
-            self.stone = Stone(line, col);
+            self.set_value(&stone, self.player);
+            self.stone = stone;
             Some(())
         }
     }
@@ -157,30 +157,18 @@ impl GameState {
 
     fn capture(&mut self, action: &str, other_player: &u8) {
         let stone_one: Stone = match board::move_stone(&self.stone, self.board_size, action) {
-            Some(stone) => {
-                if self.get_player(&stone) == *other_player {
-                    stone
-                } else {
-                    return;
-                }
-            }
-            None => return,
+            Some(stone) if self.get_value(&stone) == *other_player => stone,
+            _ => return,
         };
         let stone_two: Stone = match board::move_stone(&stone_one, self.board_size, action) {
-            Some(stone) => {
-                if self.get_player(&stone) == *other_player {
-                    stone
-                } else {
-                    return;
-                }
-            }
-            None => return,
+            Some(stone) if self.get_value(&stone) == *other_player => stone,
+            _ => return,
         };
 
         if let Some(stone) = board::move_stone(&stone_two, self.board_size, action) {
-            if self.get_player(&stone) == self.player {
-                self.board[stone_one.0][stone_one.1] = 0;
-                self.board[stone_two.0][stone_two.1] = 0;
+            if self.get_value(&stone) == self.player {
+                self.set_value(&stone_one, 0);
+                self.set_value(&stone_two, 0);
                 if self.player == 1 {
                     self.player_one_captured += 2;
                 } else {
@@ -190,7 +178,11 @@ impl GameState {
         };
     }
 
-    pub fn get_player(&self, stone: &Stone) -> u8 {
+    fn set_value(&mut self, stone: &Stone, player: u8) {
+        self.board[stone.0][stone.1] = player;
+    }
+
+    fn get_value(&self, stone: &Stone) -> u8 {
         self.board[stone.0][stone.1]
     }
 }
