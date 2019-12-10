@@ -3,9 +3,12 @@ use std::time::Instant;
 use super::{board, ACTIONS, JOINED_ACTIONS};
 use crate::algorithm;
 
+#[derive(Clone, Debug)]
 pub struct Stone(pub usize, pub usize);
+
 pub type Board = Vec<Vec<u8>>;
 
+#[derive(Clone, Debug)]
 pub struct GameState {
     pub board: Board,
     pub player: u8,
@@ -14,8 +17,8 @@ pub struct GameState {
     pub player_two_captured: u8,
     pub ia: u8,
     pub time: u128,
-    board_size: usize,
-    stone: Stone,
+    pub board_size: usize,
+    pub stone: Stone,
 }
 
 impl GameState {
@@ -73,7 +76,7 @@ impl GameState {
         }
 
         let time = Instant::now();
-        let (line, col) = algorithm::compute(&self.board, &self.player, self.board_size);
+        let (line, col) = algorithm::compute(&self);
         self.time = time.elapsed().as_nanos();
         self.play(line, col);
     }

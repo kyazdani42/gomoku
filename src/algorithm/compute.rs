@@ -1,19 +1,32 @@
-use crate::game;
+use std::cmp::{max, min};
+use std::i32::{MAX, MIN};
+use std::time::Instant;
 
-use game::{get_aligned_stones, Board, Stone, JOINED_ACTIONS};
+use crate::game::{get_aligned_stones, Board, GameState, Stone, JOINED_ACTIONS};
 
-pub fn compute(board: &Board, player: &u8, board_size: usize) -> (usize, usize) {
+pub fn compute(state: &GameState) -> (usize, usize) {
     let mut play_line = 0;
     let mut play_col = 0;
     let mut point = 0;
+    let GameState {
+        player,
+        board_size,
+        board,
+        ..
+    } = state;
     let other_player = if *player == 1 { 2 } else { 1 };
+
+    let time = Instant::now();
+    let parent_node = Node::new(state, 1);
+    println!("{}ms", time.elapsed().as_millis());
 
     for (i_line, line) in board.iter().enumerate() {
         for (i_col, col) in line.iter().enumerate() {
             if *col == 0 {
-                let mut stone_point = get_basic_point(i_line, i_col, board_size);
-                stone_point += get_alignement_point(board, i_line, i_col, board_size, *player);
-                stone_point += get_alignement_point(board, i_line, i_col, board_size, other_player);
+                let mut stone_point = get_basic_point(i_line, i_col, *board_size);
+                stone_point += get_alignement_point(board, i_line, i_col, *board_size, *player);
+                stone_point +=
+                    get_alignement_point(board, i_line, i_col, *board_size, other_player);
                 if stone_point > point {
                     point = stone_point;
                     play_line = i_line;
@@ -24,6 +37,61 @@ pub fn compute(board: &Board, player: &u8, board_size: usize) -> (usize, usize) 
     }
 
     (play_line, play_col)
+}
+
+#[derive(Debug)]
+struct Node {
+    children: Vec<Node>,
+    state: GameState,
+    heuristic: i32,
+}
+
+impl Node {
+    pub fn new(state: &GameState, depth: u8) -> Node {
+        generate_tree(state, depth)
+    }
+}
+
+fn generate_tree(state: &GameState, depth: u8) -> Node {
+    let children = generate_children(state, depth);
+    let heuristic = 0;
+    Node {
+        state: state.clone(),
+        children,
+        heuristic,
+    }
+}
+
+fn generate_children(state: &GameState, depth: u8) -> Vec<Node> {
+    let mut children: Vec<Node> = vec![];
+    if depth == 0 {
+        return children;
+    }
+
+    let new_depth = depth - 1;
+    for line in state.board.iter() {
+        for value in line.iter() {
+            if *value == 0 {
+                children.push(generate_tree(state, new_depth));
+            }
+        }
+    }
+
+    children
+}
+
+fn minimax(node: &Node, depth: u8, maximizing_player: bool) -> i32 {
+    if depth == 0 || node.heuristic == 0 {
+        node.heuristic
+    } else if maximizing_player == true {
+        node.children.iter().fold(MIN, |value, child| {
+            max(value, minimax(child, depth - 1, true))
+        })
+    } else {
+        node.children.iter().fold(MAX, move |value, child| {
+            min(value, minimax(child, depth - 1, false))
+        })
+    }
 }
 
 fn get_alignement_point(
