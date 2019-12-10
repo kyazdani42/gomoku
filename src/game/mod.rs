@@ -18,7 +18,9 @@ pub const ACTIONS: [&str; 8] = [
 
 mod board;
 mod game_state;
+mod utils;
 
 pub use board::*;
+pub use utils::*;
 pub use game_state::*;
 
