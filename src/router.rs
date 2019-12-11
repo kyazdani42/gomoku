@@ -81,14 +81,11 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
 
 fn play(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
     let params = get_params(params)?;
-    let line_param = find_param(&params, "line")?;
-    let line = parse_param(&line_param)?;
-
-    let col_param = find_param(&params, "col")?;
-    let col = parse_param(&col_param)?;
+    let index = find_param(&params, "index")?;
+    let index = parse_param(&index)?;
 
     let mut state = state.lock().unwrap();
-    state.play(line, col);
+    state.play(index);
 
     get_response_data(&state)
 }
@@ -124,17 +121,27 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) ->
 
 #[derive(Serialize, Deserialize)]
 struct ResponseData {
-    board: Vec<Vec<u8>>,
+    board: Vec<u8>,
     player: u8,
+    p1_captured: u8,
+    p2_captured: u8,
     winner: u8,
     ia: u8,
     time: u128,
 }
 
 fn get_response_data(state: &GameState) -> Option<String> {
+    let mut board = vec![0; state.board_size * state.board_size];
+
+    for (key, value) in &state.placed {
+        board[*key] = *value;
+    }
+
     let data = ResponseData {
-        board: state.board.clone(),
+        board,
         player: state.player,
+        p1_captured: state.p1_captured,
+        p2_captured: state.p2_captured,
         winner: state.winner,
         time: state.time,
         ia: state.ia,

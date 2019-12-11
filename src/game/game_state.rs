@@ -1,74 +1,93 @@
+use std::collections::HashMap;
 use std::time::Instant;
 
-use super::{capture_all, check_winner, place_stone, set_free_threes, switch_player};
+use super::{
+    capture_all, check_alignment_validity, place_stone, set_free_threes, switch_player,
+    win_by_alignment, win_by_capture,
+};
 use crate::algorithm;
 
-#[derive(Clone, Debug)]
-pub struct Stone(pub usize, pub usize);
-
-pub type Board = Vec<Vec<u8>>;
+pub type Player = u8;
+pub type Stones = HashMap<usize, Player>;
 
 #[derive(Clone, Debug)]
 pub struct GameState {
-    pub board: Board,
-    pub player: u8,
-    pub winner: u8,
-    pub player_one_captured: u8,
-    pub player_two_captured: u8,
-    pub ia: u8,
+    pub player: Player,
+    pub winner: Player,
+    pub ia: Player,
+    pub p1_captured: u8,
+    pub p2_captured: u8,
+    pub placed: Stones,
+    pub board_size: usize,
+    pub last_played: usize,
     pub time: u128,
-    pub stone: Stone,
-    pub init: bool,
+    pub alignment: Option<Vec<usize>>,
 }
 
 impl GameState {
     pub fn new() -> GameState {
         GameState {
-            board: vec![],
-            winner: 0,
-            player_one_captured: 0,
-            player_two_captured: 0,
-            stone: Stone(0, 0),
-            time: 0,
             player: 0,
+            winner: 0,
             ia: 0,
-            init: true,
+            p1_captured: 0,
+            p2_captured: 0,
+            board_size: 0,
+            last_played: 0,
+            placed: HashMap::new(),
+            alignment: None,
+            time: 0,
         }
     }
 
     pub fn init(&mut self, board_size: usize, player: u8, ia: u8) {
         *self = GameState {
-            board: vec![vec![0; board_size]; board_size],
-            winner: 0,
-            player_one_captured: 0,
-            player_two_captured: 0,
-            stone: Stone(0, 0),
-            time: 0,
-            init: true,
             player,
+            board_size,
             ia,
+            winner: 0,
+            p1_captured: 0,
+            p2_captured: 0,
+            last_played: 0,
+            alignment: None,
+            placed: HashMap::new(),
+            time: 0,
         };
     }
 
-    pub fn play(&mut self, line: usize, col: usize) {
+    pub fn play(&mut self, index: usize) {
+        let time = Instant::now();
         if self.winner != 0 {
             return;
         }
 
-        if let None = place_stone(self, line, col) {
+        if let None = place_stone(self, index) {
             return;
         }
 
-        self.init = false;
         capture_all(self);
 
-        if check_winner(self) {
+        if win_by_capture(self) {
             self.winner = self.player;
+            return;
+        }
+
+        if let Some(alignment) = &self.alignment {
+            if check_alignment_validity(&self.placed, alignment) {
+                self.winner = switch_player(self.player);
+            } else {
+                self.alignment = None;
+            }
+        }
+
+        if self.winner == 0 {
+            win_by_alignment(self);
         }
 
         self.player = switch_player(self.player);
 
         set_free_threes(self);
+        println!("{}ms", time.elapsed().as_millis());
     }
 
     pub fn play_ia(&mut self) {
@@ -76,10 +95,9 @@ impl GameState {
             return;
         }
 
-        self.init = false;
         let time = Instant::now();
-        let (line, col) = algorithm::compute(&self);
+        let index = algorithm::compute(&self);
         self.time = time.elapsed().as_nanos();
-        self.play(line, col);
+        self.play(index);
     }
 }

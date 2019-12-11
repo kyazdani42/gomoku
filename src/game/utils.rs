@@ -1,98 +1,22 @@
-use super::{
-    check_alignment, check_double_free_threes, move_stone, Board, GameState, Stone, ACTIONS,
-    JOINED_ACTIONS,
-};
+use super::{GameState, Player, Stones, ACTIONS};
 
-pub fn place_stone(state: &mut GameState, line: usize, col: usize) -> Option<()> {
-    let board_size = state.board.len();
-    let stone = Stone(line, col);
-    if line >= board_size || col >= board_size || get_value(&state.board, &stone) != 0 {
+pub fn place_stone(state: &mut GameState, index: usize) -> Option<()> {
+    let board_size = state.board_size;
+    let line = index / board_size;
+    let col = index % board_size;
+    if line >= board_size || col >= board_size || state.placed.get(&index).is_some() {
         None
     } else {
-        set_value(state, &stone, state.player);
-        state.stone = stone;
+        state.placed.insert(index, state.player);
+        state.last_played = index;
         Some(())
     }
 }
 
-pub fn capture_all(state: &mut GameState) {
-    let other_player = switch_player(state.player);
-    ACTIONS
-        .iter()
-        .for_each(|action| capture(state, action, &other_player));
-}
-
-fn capture(state: &mut GameState, action: &str, other_player: &u8) {
-    let board_size = state.board.len();
-    let stone_one: Stone = match move_stone(&state.stone, board_size, action) {
-        Some(stone) if get_value(&state.board, &stone) == *other_player => stone,
-        _ => return,
-    };
-    let stone_two: Stone = match move_stone(&stone_one, board_size, action) {
-        Some(stone) if get_value(&state.board, &stone) == *other_player => stone,
-        _ => return,
-    };
-
-    if let Some(stone) = move_stone(&stone_two, board_size, action) {
-        if get_value(&state.board, &stone) == state.player {
-            set_value(state, &stone_one, 0);
-            set_value(state, &stone_two, 0);
-            if state.player == 1 {
-                state.player_one_captured += 2;
-            } else {
-                state.player_two_captured += 2;
-            }
-        }
-    };
-}
-
-pub fn check_winner(state: &GameState) -> bool {
-    win_by_capture(state) || win_by_alignment(state)
-}
-
-fn win_by_capture(state: &GameState) -> bool {
-    if state.player == 1 {
-        state.player_one_captured == 10
-    } else {
-        state.player_two_captured == 10
-    }
-}
-
-fn win_by_alignment(state: &GameState) -> bool {
-    JOINED_ACTIONS
-        .iter()
-        .any(|actions| check_alignment(&state.board, &state.stone, state.player, *actions) == true)
-}
-
-pub fn set_free_threes(state: &mut GameState) {
-    // we need to do this because we mutate the board later on
-    // and we cannot mutate the board when it's borrowed as immutable
-    let board = state.board.clone();
-    let player = state.player;
-    let board_size = state.board.len();
-    for (i_line, line) in board.iter().enumerate() {
-        for (i_col, value) in line.iter().enumerate() {
-            // if its empty or a free three
-            if *value == 0 || *value == 3 {
-                let stone = Stone(i_line, i_col);
-                let is_double_free_three =
-                    check_double_free_threes(&state.board, &stone, player, board_size);
-
-                // TODO: if the player can capture, do not set the value
-                if is_double_free_three {
-                    set_value(state, &stone, 3);
-                } else if *value == 3 {
-                    set_value(state, &stone, 0);
-                }
-            }
-        }
-    }
-}
-
-pub fn has_neighbour(board: &Board, stone: &Stone) -> bool {
+pub fn has_neighbour(placed: &Stones, index: usize, board_size: usize) -> bool {
     ACTIONS.iter().any(|action| {
-        if let Some(neighbour) = move_stone(&stone, board.len(), action) {
-            let value = get_value(board, &neighbour);
+        if let Some(neighbour) = move_stone(index, board_size, action) {
+            let value = get_value(placed, neighbour);
             if value == 1 || value == 2 {
                 return true;
             };
@@ -109,11 +33,130 @@ pub fn switch_player(player: u8) -> u8 {
     }
 }
 
-pub fn set_value(state: &mut GameState, stone: &Stone, player: u8) {
-    let Stone(line, col) = *stone;
-    state.board[line][col] = player;
+pub fn get_value(placed: &Stones, index: usize) -> Player {
+    if let Some(i) = placed.get(&index) {
+        *i
+    } else {
+        0
+    }
 }
 
-pub fn get_value(board: &Board, stone: &Stone) -> u8 {
-    board[stone.0][stone.1]
+pub fn move_stone(index: usize, board_size: usize, dir: &str) -> Option<usize> {
+    match dir {
+        "left" if left(index, board_size) => Some(index - 1),
+        "right" if right(index, board_size) => Some(index + 1),
+        "top" if top(index, board_size) => Some(index - board_size),
+        "bot" if bot(index, board_size) => Some(index + board_size),
+        "bot_right" if bot_right(index, board_size) => Some(index + board_size + 1),
+        "top_right" if top_right(index, board_size) => Some(index - (board_size - 1)),
+        "bot_left" if bot_left(index, board_size) => Some(index + (board_size - 1)),
+        "top_left" if top_left(index, board_size) => Some(index - (board_size + 1)),
+        _ => None,
+    }
+}
+
+fn bot_right(index: usize, board_size: usize) -> bool {
+    bot(index, board_size) && right(index, board_size)
+}
+
+fn bot_left(index: usize, board_size: usize) -> bool {
+    bot(index, board_size) && left(index, board_size)
+}
+
+fn top_right(index: usize, board_size: usize) -> bool {
+    top(index, board_size) && right(index, board_size)
+}
+
+fn top_left(index: usize, board_size: usize) -> bool {
+    top(index, board_size) && left(index, board_size)
+}
+
+fn left(index: usize, board_size: usize) -> bool {
+    0 < index % board_size
+}
+
+fn right(index: usize, board_size: usize) -> bool {
+    index % board_size < board_size - 1
+}
+
+fn top(index: usize, board_size: usize) -> bool {
+    board_size <= index
+}
+
+fn bot(index: usize, board_size: usize) -> bool {
+    index / board_size < board_size - 1
+}
+
+// TODO: testing place_stone and has_neighbour
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod move_stone {
+        use super::move_stone;
+
+        #[test]
+        fn left_false() {
+            let index = 0;
+            let board_size = 4;
+            let dir = "left";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), false);
+        }
+
+        #[test]
+        fn left_true() {
+            let index = 1;
+            let board_size = 4;
+            let dir = "left";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), true);
+        }
+
+        #[test]
+        fn right_false() {
+            let index = 3;
+            let board_size = 4;
+            let dir = "right";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), false);
+        }
+
+        #[test]
+        fn right_true() {
+            let index = 2;
+            let board_size = 4;
+            let dir = "right";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), true);
+        }
+
+        #[test]
+        fn top_false() {
+            let index = 2;
+            let board_size = 4;
+            let dir = "top";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), false);
+        }
+
+        #[test]
+        fn top_true() {
+            let index = 4;
+            let board_size = 4;
+            let dir = "top";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), true);
+        }
+
+        #[test]
+        fn bot_false() {
+            let index = 12;
+            let board_size = 4;
+            let dir = "bot";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), false);
+        }
+
+        #[test]
+        fn bot_true() {
+            let index = 11;
+            let board_size = 4;
+            let dir = "bot";
+            assert_eq!(move_stone(index, board_size, dir).is_some(), true);
+        }
+    }
 }

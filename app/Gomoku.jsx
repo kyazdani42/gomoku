@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Board } from './Board';
 import { GameSelection } from './GameSelection';
-// import { Info } from "./Info";
+import { Info } from "./Info";
 
 export const Gomoku = () => {
   const [state, setState] = useState(null);
@@ -15,35 +15,29 @@ export const Gomoku = () => {
   }, [initParam]);
 
   useEffect(() => {
-    if (positions) handlePlay(positions, setState, setError);
+    if (positions !== null) handlePlay(positions, setState, setError);
   }, [positions]);
 
-  if (!state) return <GameSelection setInitParam={setInitParam} />;
+  if (state === null) return <GameSelection setInitParam={setInitParam} />;
 
   return (
     <div style={{ paddingTop: '50px' }}>
       <Board
         winner={state.winner}
-        board={state.board.flat()}
+        board={state.board}
         player={state.player}
+        onReset={() => setState(null)}
         onClick={payload => {
-          const newBoard = JSON.parse(JSON.stringify(state.board));
-          const newLine = Math.floor(payload / state.board.length);
-          const newCol = payload % state.board.length;
-          if (newBoard[newLine][newCol] === 0) {
-            newBoard[newLine][newCol] = state.player;
+          if (state.board[payload] === 0) {
+            const newBoard = state.board.slice();
+            newBoard[payload] = state.player;
             setState({ ...state, board: newBoard });
-            setPositions({
-              line: newLine,
-              col: newCol
-            });
+            setPositions(payload);
           }
         }}
       />
-      {/* <Info /> */}
-      <button onClick={() => playIa(setState, setError)}>
-        Play Ia
-      </button>
+      <Info {...state} />
+      <button onClick={() => playIa(setState, setError)}>Play Ia</button>
     </div>
   );
 };
@@ -63,9 +57,8 @@ const URL = 'http://localhost:3001';
 
 const getInitUrl = ({ ia, size }) => `${URL}/init?ia=${ia}&size=${size}`;
 
-const handlePlay = async (positions, setState, setError) => {
-  const { line, col } = positions;
-  const res = await fetch(getPlayUrl({ line, col }));
+const handlePlay = async (index, setState, setError) => {
+  const res = await fetch(getPlayUrl(index));
   const { ok, headers } = res;
   if (ok && headers.get('Content-Type') === 'application/json') {
     setState(await res.json());
@@ -74,7 +67,7 @@ const handlePlay = async (positions, setState, setError) => {
   }
 };
 
-const getPlayUrl = ({ line, col }) => `${URL}/play?line=${line}&col=${col}`;
+const getPlayUrl = index => `${URL}/play?index=${index}`;
 
 const getPlayIa = () => `${URL}/play_ia`;
 
@@ -86,4 +79,4 @@ const playIa = async (setState, setError) => {
   } else {
     setError();
   }
-}
+};

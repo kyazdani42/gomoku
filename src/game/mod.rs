@@ -16,11 +16,15 @@ pub const ACTIONS: [&str; 8] = [
     "bot_right",
 ];
 
-mod board;
 mod game_state;
+mod win;
+mod free_three;
 mod utils;
+mod capture;
 
-pub use board::*;
+pub use win::*;
+pub use free_three::*;
+pub use capture::*;
 pub use utils::*;
 pub use game_state::*;
 

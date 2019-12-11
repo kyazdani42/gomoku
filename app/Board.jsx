@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 
 // TODO: we might wan't to check if the board is full so we can reset the game
 // But in the backend it might be better
-export const Board = ({ onClick, board, player, winner }) => {
+export const Board = ({ onClick, board, player, winner, onReset }) => {
   const lines = new Array(Math.sqrt(board.length)).fill(0);
-  const win = winner !== 0 ? <Winning player={winner} /> : null;
+  const win = winner !== 0 ? <Winning player={winner} onReset={onReset} /> : null;
   return (
     <React.Fragment>
       {win}
@@ -32,7 +32,7 @@ export const Board = ({ onClick, board, player, winner }) => {
 
 // TODO: button to reset with same properties
 // TODO: button to go back to selection screen
-const Winning = ({ player }) => (
+const Winning = ({ player, onReset }) => (
   <div
     style={{
       width: '100vw',
@@ -62,7 +62,7 @@ const Winning = ({ player }) => (
         )}
       </div>
       <span style={{ fontSize: '9em', color: '#ffffff' }}>winner!</span>
-      <button>Click me !</button>
+      <button onClick={onReset}>Click me !</button>
     </div>
   </div>
 );
@@ -245,7 +245,7 @@ const Forbidden = () => (
 const blockStyle = {
   width: '40px',
   height: '40px',
-  cursor: 'none'
+  cursor: 'pointer'
 };
 
 const lineStyle = {
