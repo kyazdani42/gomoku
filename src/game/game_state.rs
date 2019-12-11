@@ -17,7 +17,6 @@ pub struct GameState {
     pub player_two_captured: u8,
     pub ia: u8,
     pub time: u128,
-    pub board_size: usize,
     pub stone: Stone,
     pub init: bool,
 }
@@ -30,7 +29,6 @@ impl GameState {
             player_one_captured: 0,
             player_two_captured: 0,
             stone: Stone(0, 0),
-            board_size: 0,
             time: 0,
             player: 0,
             ia: 0,
@@ -45,7 +43,6 @@ impl GameState {
             player_one_captured: 0,
             player_two_captured: 0,
             stone: Stone(0, 0),
-            board_size,
             time: 0,
             init: true,
             player,

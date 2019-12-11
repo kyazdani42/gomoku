@@ -1,17 +1,11 @@
-use super::{Board, Stone, JOINED_ACTIONS};
+use super::{get_value, Board, Stone, JOINED_ACTIONS};
 
-pub fn check_alignment(
-    board: &Board,
-    stone: &Stone,
-    player: u8,
-    board_size: usize,
-    actions: &str,
-) -> bool {
+pub fn check_alignment(board: &Board, stone: &Stone, player: u8, actions: &str) -> bool {
     4 < actions
         .split('|')
         .into_iter()
         .fold(1, |mut stones, action| {
-            stones += get_aligned_stones(board, stone, player, board_size, action, actions);
+            stones += get_aligned_stones(board, stone, player, action, actions);
             stones
         })
 }
@@ -20,10 +14,10 @@ pub fn get_aligned_stones(
     board: &Board,
     stone: &Stone,
     player: u8,
-    board_size: usize,
     action: &str,
     actions: &str,
 ) -> i32 {
+    let board_size = board.len();
     let mut new_stone = move_stone(&stone, board_size, action);
     let mut stones = 0;
 
@@ -50,49 +44,38 @@ fn get_all_moves(actions: &str) -> Vec<&str> {
 
 fn is_capturable(board: &Board, stone: &Stone, player: u8, actions: &str) -> bool {
     let other_player = if player == 1 { 2 } else { 1 };
+    let board_size = board.len();
     get_all_moves(actions).iter().any(|actions| {
         let actions = actions.split('|').into_iter().collect::<Vec<&str>>();
 
-        if let Some(stone_side) = move_stone(stone, board.len(), actions[0]) {
-            if let Some(stone_oside) = move_stone(stone, board.len(), actions[1]) {
-                let value_side = board[stone_side.0][stone_side.1];
-                let value_oside = board[stone_oside.0][stone_oside.1];
-
-                if value_side == player
-                    && check_place_capture(
-                        board,
-                        &stone_side,
-                        value_oside,
-                        actions[0],
-                        other_player,
-                    )
-                {
-                    return true;
-                }
-                if value_oside == player
-                    && check_place_capture(
-                        board,
-                        &stone_oside,
-                        value_side,
-                        actions[1],
-                        other_player,
-                    )
-                {
-                    return true;
-                };
-            }
+        let (value_side, stone_side) = match move_stone(stone, board_size, actions[0]) {
+            Some(v) => (get_value(board, &v), v),
+            None => return false,
         };
 
-        false
+        let (value_oside, stone_oside) = match move_stone(stone, board_size, actions[1]) {
+            Some(v) => (get_value(board, &v), v),
+            None => return false,
+        };
+
+        if value_side == player {
+            check_place_capture(board, &stone_side, value_oside, actions[0], other_player)
+        } else if value_oside == player {
+            check_place_capture(board, &stone_oside, value_side, actions[1], other_player)
+        } else {
+            false
+        }
     })
 }
 
 fn check_place_capture(board: &Board, stone: &Stone, value: u8, action: &str, player: u8) -> bool {
-    if let Some(Stone(x, y)) = move_stone(stone, board.len(), action) {
-        let value_2 = board[x][y];
-        return (value == 0 && value_2 == player) || (value == player && value_2 == 0);
+    match move_stone(stone, board.len(), action) {
+        Some(Stone(x, y)) => {
+            let value_2 = board[x][y];
+            (value == 0 && value_2 == player) || (value == player && value_2 == 0)
+        }
+        _ => false,
     }
-    false
 }
 
 pub fn check_double_free_threes(

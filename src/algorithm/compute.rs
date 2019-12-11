@@ -9,14 +9,9 @@ pub fn compute(state: &GameState) -> (usize, usize) {
     let mut play_line = 0;
     let mut play_col = 0;
     let mut point = 0;
-    let GameState {
-        player,
-        board_size,
-        board,
-        ..
-    } = state;
+    let GameState { player, board, .. } = state;
     let player = *player;
-    let board_size = *board_size;
+    let board_size = board.len();
     let other_player = switch_player(player);
 
     if state.init == true {
@@ -34,8 +29,8 @@ pub fn compute(state: &GameState) -> (usize, usize) {
         for (i_col, col) in line.iter().enumerate() {
             if *col == 0 {
                 let mut stone_point = get_basic_point(i_line, i_col, board_size);
-                stone_point += get_alignement_point(board, i_line, i_col, board_size, player);
-                stone_point += get_alignement_point(board, i_line, i_col, board_size, other_player);
+                stone_point += get_alignement_point(board, i_line, i_col, player);
+                stone_point += get_alignement_point(board, i_line, i_col, other_player);
                 if stone_point > point {
                     point = stone_point;
                     play_line = i_line;
@@ -79,12 +74,11 @@ fn generate_children(state: &GameState, depth: u8, player: u8) -> Vec<Node> {
     }
 
     let new_depth = depth - 1;
-    let board_size = state.board_size;
 
     for (il, line) in state.board.iter().enumerate() {
         for (ic, value) in line.iter().enumerate() {
             let stone = Stone(il, ic);
-            if *value == 0 && has_neighbour(&state.board, board_size, &stone) == true {
+            if *value == 0 && has_neighbour(&state.board, &stone) == true {
                 children.push(create_child(state, new_depth, stone, player))
             }
         }
@@ -119,15 +113,9 @@ fn minimax(node: &Node, depth: u8, maximizing_player: bool) -> i32 {
     }
 }
 
-fn get_alignement_point(
-    board: &Board,
-    line: usize,
-    col: usize,
-    board_size: usize,
-    player: u8,
-) -> i32 {
+fn get_alignement_point(board: &Board, line: usize, col: usize, player: u8) -> i32 {
     JOINED_ACTIONS.iter().fold(0, |mut points, actions| {
-        points += fake_heuristic(board, &Stone(line, col), player, board_size, *actions);
+        points += fake_heuristic(board, &Stone(line, col), player, *actions);
         points
     })
 }
@@ -147,18 +135,12 @@ fn get_basic_point(line: usize, col: usize, board_size: usize) -> i32 {
     }
 }
 
-fn fake_heuristic(
-    board: &Board,
-    stone: &Stone,
-    player: u8,
-    board_size: usize,
-    actions: &str,
-) -> i32 {
+fn fake_heuristic(board: &Board, stone: &Stone, player: u8, actions: &str) -> i32 {
     actions
         .split('|')
         .into_iter()
         .fold(1, |mut stones, action| {
-            let new_stones = get_aligned_stones(board, stone, player, board_size, action, actions);
+            let new_stones = get_aligned_stones(board, stone, player, action, actions);
             stones += new_stones * new_stones * new_stones * 100;
             stones
         })

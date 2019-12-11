@@ -4,8 +4,9 @@ use super::{
 };
 
 pub fn place_stone(state: &mut GameState, line: usize, col: usize) -> Option<()> {
+    let board_size = state.board.len();
     let stone = Stone(line, col);
-    if line >= state.board_size || col >= state.board_size || get_value(&state.board, &stone) != 0 {
+    if line >= board_size || col >= board_size || get_value(&state.board, &stone) != 0 {
         None
     } else {
         set_value(state, &stone, state.player);
@@ -22,16 +23,17 @@ pub fn capture_all(state: &mut GameState) {
 }
 
 fn capture(state: &mut GameState, action: &str, other_player: &u8) {
-    let stone_one: Stone = match move_stone(&state.stone, state.board_size, action) {
+    let board_size = state.board.len();
+    let stone_one: Stone = match move_stone(&state.stone, board_size, action) {
         Some(stone) if get_value(&state.board, &stone) == *other_player => stone,
         _ => return,
     };
-    let stone_two: Stone = match move_stone(&stone_one, state.board_size, action) {
+    let stone_two: Stone = match move_stone(&stone_one, board_size, action) {
         Some(stone) if get_value(&state.board, &stone) == *other_player => stone,
         _ => return,
     };
 
-    if let Some(stone) = move_stone(&stone_two, state.board_size, action) {
+    if let Some(stone) = move_stone(&stone_two, board_size, action) {
         if get_value(&state.board, &stone) == state.player {
             set_value(state, &stone_one, 0);
             set_value(state, &stone_two, 0);
@@ -57,15 +59,9 @@ fn win_by_capture(state: &GameState) -> bool {
 }
 
 fn win_by_alignment(state: &GameState) -> bool {
-    JOINED_ACTIONS.iter().any(|actions| {
-        check_alignment(
-            &state.board,
-            &state.stone,
-            state.player,
-            state.board_size,
-            *actions,
-        ) == true
-    })
+    JOINED_ACTIONS
+        .iter()
+        .any(|actions| check_alignment(&state.board, &state.stone, state.player, *actions) == true)
 }
 
 pub fn set_free_threes(state: &mut GameState) {
@@ -73,7 +69,7 @@ pub fn set_free_threes(state: &mut GameState) {
     // and we cannot mutate the board when it's borrowed as immutable
     let board = state.board.clone();
     let player = state.player;
-    let board_size = state.board_size;
+    let board_size = state.board.len();
     for (i_line, line) in board.iter().enumerate() {
         for (i_col, value) in line.iter().enumerate() {
             // if its empty or a free three
@@ -93,9 +89,9 @@ pub fn set_free_threes(state: &mut GameState) {
     }
 }
 
-pub fn has_neighbour(board: &Board, board_size: usize, stone: &Stone) -> bool {
+pub fn has_neighbour(board: &Board, stone: &Stone) -> bool {
     ACTIONS.iter().any(|action| {
-        if let Some(neighbour) = move_stone(&stone, board_size, action) {
+        if let Some(neighbour) = move_stone(&stone, board.len(), action) {
             let value = get_value(board, &neighbour);
             if value == 1 || value == 2 {
                 return true;
