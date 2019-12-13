@@ -13,18 +13,6 @@ pub fn place_stone(state: &mut GameState, index: usize) -> Option<()> {
     }
 }
 
-pub fn has_neighbour(placed: &Stones, index: usize, board_size: usize) -> bool {
-    ACTIONS.iter().any(|action| {
-        if let Some(neighbour) = move_stone(index, board_size, action) {
-            let value = get_value(placed, neighbour);
-            if value == 1 || value == 2 {
-                return true;
-            };
-        }
-        false
-    })
-}
-
 pub fn switch_player(player: u8) -> u8 {
     if player == 1 {
         2
@@ -39,6 +27,18 @@ pub fn get_value(placed: &Stones, index: usize) -> Player {
     } else {
         0
     }
+}
+
+pub fn get_empty_neighbours(placed: &Stones, index: usize, board_size: usize) -> Vec<usize> {
+    ACTIONS.iter().fold(vec![], |mut neighbours, action| {
+        if let Some(neighbour) = move_stone(index, board_size, action) {
+            if get_value(placed, neighbour) == 0 {
+                neighbours.push(neighbour);
+            }
+        }
+
+        neighbours
+    })
 }
 
 pub fn move_stone(index: usize, board_size: usize, dir: &str) -> Option<usize> {
@@ -87,7 +87,6 @@ fn bot(index: usize, board_size: usize) -> bool {
     index / board_size < board_size - 1
 }
 
-// TODO: testing place_stone and has_neighbour
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,147 +1,132 @@
-// use std::cmp::{max, min};
-// use std::i32::{MAX, MIN};
-// use std::time::Instant;
+use std::cmp::{max, min};
+use std::i32::{MAX, MIN};
+use std::time::Instant;
 
-// use crate::game::{has_neighbour, switch_player};
-use crate::game::{GameState}; //, JOINED_ACTIONS};
+use crate::game::{get_empty_neighbours, switch_player};
+use crate::game::{GameState, Stones};
 
 pub fn compute(state: &GameState) -> usize {
-    // let mut play_line = 0;
-    // let mut play_col = 0;
-    // let mut point = 0;
-    // let player = state.player;
-    let board_size = state.board_size;
-    // let other_player = switch_player(player);
 
     if state.placed.is_empty() {
-        return (board_size * board_size) / 2
+        let board_size = state.board_size;
+        return (board_size * board_size) / 2;
     }
 
-    // let time = Instant::now();
-    // let parent_node = Node::new(state, 2);
-    // println!("{}ms", time.elapsed().as_millis());
-    // println!("children: {}", parent_node.children.len());
-    //
-    // println!("{}", minimax(&parent_node, 2, true));
+    let time = Instant::now();
+    let parent_node = Node::new(state, 2);
+    println!("{}ms", time.elapsed().as_millis());
+    println!("children: {}", parent_node.children.len());
+    println!(
+        "children of first children: {}",
+        parent_node.children[0].children.len()
+    );
 
-    return 0;
-    // for (i_line, line) in board.iter().enumerate() {
-    //     for (i_col, col) in line.iter().enumerate() {
-    //         if *col == 0 {
-    //             let mut stone_point = get_basic_point(i_line, i_col, board_size);
-    //             stone_point += get_alignement_point(board, i_line, i_col, player);
-    //             stone_point += get_alignement_point(board, i_line, i_col, other_player);
-    //             if stone_point > point {
-    //                 point = stone_point;
-    //                 play_line = i_line;
-    //                 play_col = i_col;
-    //             }
-    //         }
-    //     }
-    // }
-    //
-    // (play_line, play_col)
+    let (heuristic, index) = minimax(parent_node, 2, true);
+    println!("H: {}", heuristic);
+
+    index
 }
 
-// #[derive(Debug)]
-// struct Node {
-//     state: GameState,
-//     children: Vec<Node>,
-//     heuristic: i32,
-// }
-//
-// impl Node {
-//     pub fn new(state: &GameState, depth: u8) -> Node {
-//         generate_tree(state.clone(), depth, state.player)
-//     }
-// }
-//
-// fn generate_tree(state: GameState, depth: u8, player: u8) -> Node {
-//     let children = generate_children(&state, depth, player);
-//     // TODO: compute heuristic
-//     let heuristic = 1;
-//     Node {
-//         state,
-//         children,
-//         heuristic,
-//     }
-// }
-//
-// fn generate_children(state: &GameState, depth: u8, player: u8) -> Vec<Node> {
-//     let mut children: Vec<Node> = vec![];
-//     if depth == 0 {
-//         return children;
-//     }
-//
-//     let new_depth = depth - 1;
-//
-//     for (il, line) in state.board.iter().enumerate() {
-//         for (ic, value) in line.iter().enumerate() {
-//             let stone = Stone(il, ic);
-//             if *value == 0 && has_neighbour(&state.board, &stone) == true {
-//                 children.push(create_child(state, new_depth, stone, player))
-//             }
-//         }
-//     }
-//
-//     children
-// }
-//
-// fn create_child(state: &GameState, new_depth: u8, stone: Stone, player: u8) -> Node {
-//     let mut new_state = state.clone();
-//
-//     let children_player = switch_player(player);
-//     new_state.player = player;
-//
-//     set_value(&mut new_state, &stone, player);
-//     new_state.stone = stone;
-//
-//     generate_tree(new_state, new_depth, children_player)
-// }
-//
-// fn minimax(node: &Node, depth: u8, maximizing_player: bool) -> i32 {
-//     if depth == 0 || node.heuristic == 0 {
-//         node.heuristic
-//     } else if maximizing_player == true {
-//         node.children.iter().fold(MIN, |value, child| {
-//             max(value, minimax(child, depth - 1, true))
-//         })
-//     } else {
-//         node.children.iter().fold(MAX, move |value, child| {
-//             min(value, minimax(child, depth - 1, false))
-//         })
-//     }
-// }
-//
-// fn get_alignement_point(board: &Board, line: usize, col: usize, player: u8) -> i32 {
-//     JOINED_ACTIONS.iter().fold(0, |mut points, actions| {
-//         points += fake_heuristic(board, &Stone(line, col), player, *actions);
-//         points
-//     })
-// }
-//
-// fn get_basic_point(line: usize, col: usize, board_size: usize) -> i32 {
-//     let point_line = line < (board_size / 2);
-//     let point_col = col < (board_size / 2);
-//
-//     if !point_line && !point_col {
-//         (board_size - line + board_size - col) as i32
-//     } else if !point_line {
-//         (board_size - line + col) as i32
-//     } else if !point_col {
-//         (board_size - col + line) as i32
-//     } else {
-//         (line + col) as i32
-//     }
-// }
-//
-// fn fake_heuristic(board: &Board, stone: &Stone, player: u8, actions: &str) -> i32 {
-//     actions
-//         .split('|')
-//         .into_iter()
-//         .fold(1, |mut stones, action| {
-//             let new_stones = get_aligned_stones(board, stone, player, action, actions);
-//             stones += new_stones * new_stones * new_stones * 100;
-//             stones
-//         })
-// }
+#[derive(Debug)]
+struct Node {
+    placed: Stones,
+    index: usize,
+    children: Vec<Node>,
+    heuristic: i32,
+}
+
+impl Node {
+    pub fn new(state: &GameState, depth: u8) -> Node {
+        generate_tree(
+            state.placed.clone(),
+            state.board_size,
+            depth,
+            state.player,
+            0,
+        )
+    }
+}
+
+fn generate_tree(
+    placed: Stones,
+    board_size: usize,
+    depth: u8,
+    player: u8,
+    played_index: usize,
+) -> Node {
+    let children = generate_children(&placed, board_size, depth, player);
+    // TODO: compute heuristic
+    let heuristic = 1;
+    Node {
+        index: played_index,
+        placed,
+        children,
+        heuristic,
+    }
+}
+
+fn generate_children(placed: &Stones, board_size: usize, depth: u8, player: u8) -> Vec<Node> {
+    if depth == 0 {
+        return vec![];
+    }
+
+    let mut children = vec![];
+
+    let next_depth = depth - 1;
+    for (index, value) in placed {
+        if *value == 1 || *value == 2 {
+            for neighbour in get_empty_neighbours(placed, *index, board_size) {
+                children.push(create_child_node(
+                    placed, board_size, next_depth, player, neighbour,
+                ));
+            }
+        }
+    }
+
+    children
+}
+
+fn create_child_node(
+    placed: &Stones,
+    board_size: usize,
+    depth: u8,
+    player: u8,
+    index: usize,
+) -> Node {
+    let mut new_placed = placed.clone();
+    new_placed.insert(index, player);
+
+    generate_tree(new_placed, board_size, depth, switch_player(player), index)
+}
+
+fn minimax(node: Node, depth: u8, maximizing_player: bool) -> (i32, usize) {
+    if depth == 0 || node.heuristic == 0 {
+        (node.heuristic, node.index)
+    } else if maximizing_player == true {
+        let mut best_index = 0;
+        let mut max_value = MIN;
+
+        for child in node.children {
+            let (child_h, child_i) = minimax(child, depth - 1, false);
+            if max_value < child_h {
+                max_value = child_h;
+                best_index = child_i;
+            }
+        }
+
+        (max_value, best_index)
+    } else {
+        let mut best_index = 0;
+        let mut min_value = MAX;
+
+        for child in node.children {
+            let (child_h, child_i) = minimax(child, depth - 1, true);
+            if child_h < min_value {
+                min_value = child_h;
+                best_index = child_i;
+            }
+        }
+
+        (min_value, best_index)
+    }
+}
