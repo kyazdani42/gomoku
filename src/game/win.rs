@@ -1,5 +1,5 @@
 use super::{
-    capturable, check_all_captures, get_value, move_stone, switch_player, GameState, Stones,
+    can_oponent_capture, get_value, is_capturable, move_stone, switch_player, GameState, Stones,
     JOINED_ACTIONS,
 };
 
@@ -13,22 +13,21 @@ pub fn win_by_capture(state: &GameState) -> bool {
 
 pub fn win_by_alignment(state: &mut GameState) {
     let alignments = get_alignments(state);
-    if alignments.len() > 0 {
-        state.winner = state.player;
-        let alignment = alignments[0].clone();
-        if get_oponent_captures(state) == 8 {
-            if check_all_captures(&state.placed, state.board_size, switch_player(state.player)) {
-                state.alignment = Some(alignment);
-                state.winner = 0;
-            }
-        } else {
-            if let Some(alignment) =
-                brokable(alignment, &state.placed, state.board_size, state.player)
-            {
-                state.alignment = Some(alignment);
-                state.winner = 0;
-            }
-        }
+
+    if alignments.len() == 0 {
+        return;
+    }
+
+    state.winner = state.player;
+    let alignment = alignments[0].clone();
+
+    let not_done = alignment.brokable
+        || (get_oponent_captures(state) == 8
+            && can_oponent_capture(&state.placed, state.board_size, switch_player(state.player)));
+
+    if not_done {
+        state.alignment = Some(alignment.indexes);
+        state.winner = 0;
     }
 }
 
@@ -40,10 +39,16 @@ fn get_oponent_captures(state: &GameState) -> u8 {
     }
 }
 
-fn get_alignments(state: &GameState) -> Vec<Vec<usize>> {
-    let mut aligned = vec![];
-    for (i, actions) in JOINED_ACTIONS.iter().enumerate() {
-        aligned.push(vec![]);
+#[derive(Clone)]
+struct Alignment {
+    indexes: Vec<usize>,
+    brokable: bool,
+}
+
+fn get_alignments(state: &GameState) -> Vec<Alignment> {
+    let mut return_values: Vec<Alignment> = vec![];
+    for actions in JOINED_ACTIONS.iter() {
+        let mut aligned = vec![];
         for (j, action) in actions.split('|').into_iter().enumerate() {
             let stones = get_aligned_stones(
                 &state.placed,
@@ -53,25 +58,77 @@ fn get_alignments(state: &GameState) -> Vec<Vec<usize>> {
                 action,
             );
             if j == 0 {
-                for v in stones.into_iter() {
-                    aligned[i].push(v);
-                }
+                aligned = stones;
             } else {
-                aligned[i].insert(0, state.last_played);
+                aligned.insert(0, state.last_played);
                 for v in stones.into_iter() {
-                    aligned[i].insert(0, v);
+                    aligned.insert(0, v);
                 }
             }
         }
-    }
 
-    let mut return_values: Vec<Vec<usize>> = vec![];
-    for value in aligned.into_iter() {
-        if 4 < value.len() {
-            return_values.push(value.clone());
+        if 4 < aligned.len() {
+            let indexes = get_indexes(&aligned);
+            let brokable = is_brokable(
+                &state.placed,
+                &indexes,
+                state.player,
+                state.board_size,
+                *actions,
+            );
+            return_values.push(Alignment { indexes, brokable });
         }
     }
+
     return_values
+}
+
+fn is_brokable(
+    placed: &Stones,
+    alignment: &Vec<usize>,
+    player: u8,
+    board_size: usize,
+    directions: &str,
+) -> bool {
+    let actions = JOINED_ACTIONS
+        .iter()
+        .filter(|x| *x != &directions)
+        .map(|x| *x)
+        .collect::<Vec<&str>>();
+    for index in alignment {
+        if is_capturable(
+            placed,
+            *index,
+            board_size,
+            player,
+            switch_player(player),
+            &actions,
+        ) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn get_indexes(alignment: &Vec<usize>) -> Vec<usize> {
+    let extremities = get_extremities(alignment);
+    alignment
+        .clone()
+        .iter()
+        .filter(|x| !extremities.contains(*x))
+        .map(|x| *x)
+        .collect()
+}
+
+fn get_extremities(alignment: &Vec<usize>) -> Vec<usize> {
+    match alignment.len() {
+        6 => vec![0, 5],
+        7 => vec![0, 1, 5, 6],
+        8 => vec![0, 1, 2, 5, 6, 7],
+        9 => vec![0, 1, 2, 3, 5, 6, 7, 8],
+        _ => vec![],
+    }
 }
 
 fn get_aligned_stones(
@@ -92,40 +149,6 @@ fn get_aligned_stones(
         maybe_stone = move_stone(next_i, board_size, action);
     }
     stones
-}
-
-fn brokable(
-    alignment: Vec<usize>,
-    placed: &Stones,
-    board_size: usize,
-    player: u8,
-) -> Option<Vec<usize>> {
-    let extremities = get_extremities(&alignment);
-    for (i, index) in alignment.clone().iter().enumerate() {
-        if extremities.contains(&i) == false {
-            if capturable(placed, *index, board_size, player) {
-                return Some(
-                    alignment
-                        .iter()
-                        .filter(|v| !extremities.contains(*v))
-                        .map(|x| *x)
-                        .collect(),
-                );
-            }
-        }
-    }
-
-    None
-}
-
-fn get_extremities(alignment: &Vec<usize>) -> Vec<usize> {
-    match alignment.len() {
-        6 => vec![0, 5],
-        7 => vec![0, 1, 5, 6],
-        8 => vec![0, 1, 2, 5, 6, 7],
-        9 => vec![0, 1, 2, 3, 5, 6, 7, 8],
-        _ => vec![],
-    }
 }
 
 pub fn check_alignment_validity(placed: &Stones, alignment: &Vec<usize>) -> bool {

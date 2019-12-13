@@ -3,16 +3,14 @@ use super::{get_value, move_stone, switch_player, GameState, Stones, ACTIONS};
 pub fn capture_all(state: &mut GameState) {
     let other_player = switch_player(state.player);
     ACTIONS.iter().for_each(|action| {
-        let indexes = get_captured_indexes(
+        if let Some([i, j]) = get_captured_indexes(
             &state.placed,
             state.last_played,
             state.board_size,
             action,
             state.player,
             other_player,
-        );
-
-        if let Some([i, j]) = indexes {
+        ) {
             state.placed.remove(&i);
             state.placed.remove(&j);
             if state.player == 1 {
@@ -24,7 +22,7 @@ pub fn capture_all(state: &mut GameState) {
     });
 }
 
-pub fn get_captured_indexes(
+fn get_captured_indexes(
     placed: &Stones,
     index: usize,
     board_size: usize,
@@ -51,31 +49,57 @@ pub fn get_captured_indexes(
     None
 }
 
-pub fn capturable(placed: &Stones, index: usize, board_size: usize, player: u8) -> bool {
-    let other_player = switch_player(player);
-    for (i, value) in placed {
-        if *value == other_player {
-            for action in ACTIONS.iter() {
-                if let Some([x, y]) =
-                    get_potential_captured_indexes(placed, *i, board_size, action, player)
-                {
-                    if x == index || y == index {
-                        return true;
-                    }
+// Check if an index matches a capture pattern that can be filled
+// by the oponent
+pub fn is_capturable(
+    placed: &Stones,
+    index: usize,
+    board_size: usize,
+    player: u8,
+    player2: u8,
+    actions: &Vec<&str>,
+) -> bool {
+    for action in actions {
+        let split = action.split('|').collect::<Vec<&str>>();
+        let dir1 = split[0];
+        let dir2 = split[1];
+        let (i_v, i_i) = match move_stone(index, board_size, dir1) {
+            Some(i) => (get_value(placed, i), i),
+            _ => continue,
+        };
+
+        let (j_v, j_i) = match move_stone(index, board_size, dir2) {
+            Some(i) => (get_value(placed, i), i),
+            _ => continue,
+        };
+
+        let (prev_index, side_value, dir) = if i_v == player {
+            (i_i, j_v, dir1)
+        } else if j_v == player {
+            (j_i, i_v, dir2)
+        } else {
+            continue;
+        };
+
+        if side_value == player2 || side_value == 0 {
+            if let Some(i) = move_stone(prev_index, board_size, dir) {
+                let value = get_value(placed, i);
+                if (side_value == player2 && value == 0) || (side_value == 0 && value == player2) {
+                    return true;
                 }
             }
         }
     }
+
     false
 }
 
-pub fn check_all_captures(placed: &Stones, board_size: usize, player: u8) -> bool {
+pub fn can_oponent_capture(placed: &Stones, board_size: usize, player: u8) -> bool {
     let other_player = switch_player(player);
     for (index, value) in placed {
         if *value == player {
             for action in ACTIONS.iter() {
-                if let Some(_) =
-                    get_potential_captured_indexes(placed, *index, board_size, action, other_player)
+                if get_potential_captured_indexes(placed, *index, board_size, action, other_player)
                 {
                     return true;
                 }
@@ -85,38 +109,39 @@ pub fn check_all_captures(placed: &Stones, board_size: usize, player: u8) -> boo
     false
 }
 
-pub fn get_potential_captured_indexes(
+fn get_potential_captured_indexes(
     placed: &Stones,
     index: usize,
     board_size: usize,
     action: &str,
     other_player: u8,
-) -> Option<[usize; 2]> {
+) -> bool {
     let board_size = board_size;
     let i = match move_stone(index, board_size, action) {
         Some(i) if get_value(placed, i) == other_player => i,
-        _ => return None,
+        _ => return false,
     };
     let j = match move_stone(i, board_size, action) {
         Some(j) if get_value(placed, j) == other_player => j,
-        _ => return None,
+        _ => return false,
     };
 
     if let Some(index) = move_stone(j, board_size, action) {
         if get_value(placed, index) == 0 {
-            return Some([i, j]);
+            return true;
         }
     };
 
-    None
+    false
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    mod check_all_captures {
-        use super::check_all_captures;
+    mod can_oponent_capture {
+        use super::can_oponent_capture;
         use std::collections::HashMap;
 
         #[test]
@@ -130,7 +155,7 @@ mod tests {
             let board_size = 5;
             let player = 1;
 
-            assert_eq!(check_all_captures(&placed, board_size, player), true);
+            assert_eq!(can_oponent_capture(&placed, board_size, player), true);
         }
 
         #[test]
@@ -143,7 +168,7 @@ mod tests {
 
             let board_size = 5;
             let player = 2;
-            assert_eq!(check_all_captures(&placed, board_size, player), false);
+            assert_eq!(can_oponent_capture(&placed, board_size, player), false);
         }
     }
 
