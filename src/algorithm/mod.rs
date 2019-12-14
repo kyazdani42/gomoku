@@ -1,4 +1,6 @@
 mod compute;
+mod heuristics;
 
-pub use compute::compute;
+pub use compute::*;
+pub use heuristics::*;
 
