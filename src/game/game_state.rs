@@ -56,7 +56,6 @@ impl GameState {
     }
 
     pub fn play(&mut self, index: usize) {
-        let time = Instant::now();
         if self.winner != 0 {
             return;
         }
@@ -87,7 +86,6 @@ impl GameState {
         self.player = switch_player(self.player);
 
         set_free_threes(self);
-        println!("{}ms", time.elapsed().as_millis());
     }
 
     pub fn play_ia(&mut self) {

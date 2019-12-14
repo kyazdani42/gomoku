@@ -29,6 +29,19 @@ pub fn get_value(placed: &Stones, index: usize) -> Player {
     }
 }
 
+pub fn get_all_playable_indexes(placed: &Stones, board_size: usize) -> Vec<usize> {
+    let mut indexes = vec![];
+    for (i, v) in placed {
+        if *v == 1 || *v == 2 {
+            for neighbour in get_empty_neighbours(placed, *i, board_size) {
+                indexes.push(neighbour);
+            }
+        }
+    }
+
+    indexes
+}
+
 pub fn get_empty_neighbours(placed: &Stones, index: usize, board_size: usize) -> Vec<usize> {
     ACTIONS.iter().fold(vec![], |mut neighbours, action| {
         if let Some(neighbour) = move_stone(index, board_size, action) {
