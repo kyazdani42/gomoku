@@ -5,6 +5,7 @@ use hyper::service::service_fn;
 use hyper::Server;
 
 mod algorithm;
+mod heuristics;
 mod game;
 mod router;
 

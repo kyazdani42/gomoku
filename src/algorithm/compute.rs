@@ -4,6 +4,7 @@ use std::time::Instant;
 
 use crate::game::GameState;
 use crate::game::{get_all_playable_indexes, switch_player};
+use crate::heuristics::{get_heuristics};
 
 pub fn compute(state: &GameState) -> usize {
     let board_size = state.board_size;
@@ -37,7 +38,7 @@ pub fn compute(state: &GameState) -> usize {
 }
 
 fn minimax(state: &mut GameState, depth: u8, maximizing_player: bool, player: u8) -> i32 {
-    let heuristic = 1;
+    let heuristic = get_heuristics(&state.placed, state.last_played, state.board_size, player);;
     if depth == 0 || heuristic == 0 {
         heuristic
     } else if maximizing_player {
