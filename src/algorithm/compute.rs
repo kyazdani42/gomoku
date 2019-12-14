@@ -22,7 +22,7 @@ pub fn compute(state: &GameState) -> usize {
     for index in get_all_playable_indexes(&state.placed, board_size) {
         clone_state.placed.insert(index, state.player);
 
-        let heuristic = minimax(&mut clone_state, depth, false, switch_player(state.player));
+        let heuristic = minimax(&mut clone_state, depth - 1, false, switch_player(state.player));
         if heuristic < best_value {
             best_value = heuristic;
             best_index = index;
