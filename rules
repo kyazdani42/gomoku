@@ -1,0 +1,16 @@
+-20 coup for win
+depth min 10
+evaluate only multiple rectangular windows emcompassing but minimizing wasted space
+
+h :
+    check alignement
+    no surevaluate impossible 5 align // for 2-3-4align
+    alignemanet according to its freedom free, half free, flanked
+    potential capture
+    actual capture
+    advantageous combinations
+    check 2 players for all coup
+    other player past actions to identify patterns
+
+    5 bonus
+

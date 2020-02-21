@@ -12,23 +12,37 @@ pub fn compute(state: &GameState) -> usize {
         return (board_size * board_size) / 2;
     }
 
-    let depth = 2;
+    let mut playable_index : usize = 0;
+    let mut actual_h = 0;
 
-    let mut clone_state = state.clone();
+    let indexes = get_all_playable_indexes(&state.placed, state.board_size);
+    for index in indexes {
+        let h = get_heuristics(&state.placed, index, state.board_size, state.player);
+        if h > actual_h {
+            playable_index = index;
+            actual_h = h;
+        }
+    }
 
-    let time = Instant::now();
-    let (_heuristic, best_index) = minimax(
-        &mut clone_state,
-        depth,
-        true,
-        state.player,
-        state.last_played,
-    );
-    println!("{}ms\n", time.elapsed().as_millis());
+    playable_index
 
-    // println!("H: {}\n", best_value);
-
-    best_index
+//    let depth = 2;
+//
+//    let mut clone_state = state.clone();
+//
+//    let time = Instant::now();
+//    let (_heuristic, best_index) = minimax(
+//        &mut clone_state,
+//        depth,
+//        true,
+//        state.player,
+//        state.last_played,
+//    );
+//    println!("{}ms\n", time.elapsed().as_millis());
+//
+//    // println!("H: {}\n", best_value);
+//
+//    best_index
 }
 
 fn minimax(
