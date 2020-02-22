@@ -31,8 +31,8 @@ pub fn get_aligned_h(
     );
 
     if other_player_can_capture {
-        println!("can be captured\n");
-        h -= 10000000;
+        // println!("can be captured\n");
+        h -= 10_000_000;
     }
 
     for actions in JOINED_ACTIONS.iter() {

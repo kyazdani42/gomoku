@@ -5,8 +5,7 @@ use std::time::Instant;
 
 use super::get_heuristics;
 use crate::game::{
-    add_empty_neighbours, check_double_free_threes, get_all_playable_indexes, set_free_threes,
-    switch_player,
+    add_empty_neighbours, check_double_free_threes, get_all_playable_indexes, switch_player,
 };
 use crate::game::{GameState, Stones};
 
@@ -30,24 +29,26 @@ pub fn compute(state: &GameState) -> usize {
         HITS = 0;
     }
 
-    let board = state.placed.clone();
-
     let time = Instant::now();
-    let free_indexes = get_all_playable_indexes(&board, state.board_size);
+    let free_indexes = get_all_playable_indexes(&state.placed, state.board_size);
+
     let (heuristic, best_index) = alphabeta(
-        board,
+        &state.placed,
         depth,
         true,
         MIN,
         MAX,
-        state.player,
+        switch_player(state.player),
         state.last_played,
         state.board_size,
         &free_indexes,
     );
 
     unsafe {
-        println!("For heuristic {} with {} hits:", heuristic, HITS);
+        println!(
+            "For heuristic {}, index {} with {} hits:",
+            heuristic, best_index, HITS
+        );
         println!("total heuristic time: {}ms", TOTAL / 1_000_000);
         println!("total index recuperation time: {}ms", TOTAL2 / 1_000_000);
         println!("total cloning time: {}ms", TOTAL3 / 1_000_000);
@@ -58,13 +59,13 @@ pub fn compute(state: &GameState) -> usize {
 }
 
 fn alphabeta(
-    board: Stones,
+    board: &Stones,
     depth: u8,
     maximizing_player: bool,
     alpha: i32,
     beta: i32,
-    player: u8,
-    last_played: usize,
+    cur_player: u8,
+    cur_index: usize,
     board_size: usize,
     previous_free_indexes: &HashSet<usize>,
 ) -> (i32, usize) {
@@ -73,8 +74,8 @@ fn alphabeta(
     let mut beta = beta;
     if depth == 0 {
         let time = Instant::now();
-        let heuristic = get_heuristics(&board, last_played, board_size, player); // this take a long time to complete
-                                                                                 // let heuristic = 1;
+        let heuristic = get_heuristics(&board, cur_index, board_size, cur_player);
+
         unsafe {
             TOTAL += time.elapsed().as_nanos();
         }
@@ -82,10 +83,12 @@ fn alphabeta(
         return (heuristic, 0);
     }
 
+    // TODO: check capture and remove from board if capture, if so,
+    // update the empty neighbours by adding the captures into them
     let time = Instant::now();
     let mut indexes = previous_free_indexes.clone();
-    indexes.remove(&last_played);
-    add_empty_neighbours(&mut indexes, &board, last_played, board_size);
+    indexes.remove(&cur_index);
+    add_empty_neighbours(&mut indexes, &board, cur_index, board_size);
     unsafe {
         TOTAL2 += time.elapsed().as_nanos();
     }
@@ -93,24 +96,27 @@ fn alphabeta(
     let mut best_value = if maximizing_player { MIN } else { MAX };
     let mut best_index = 0;
 
+
+    let next_player = switch_player(cur_player);
+
     for index in indexes
         .iter()
-        .filter(|x| !check_double_free_threes(&board, **x, board_size, player))
+        .filter(|x| !check_double_free_threes(&board, **x, board_size, cur_player))
     {
         let time = Instant::now();
         let mut new_board = board.clone();
+        new_board.insert(*index, next_player);
         unsafe {
             TOTAL3 += time.elapsed().as_nanos();
         }
-        new_board.insert(*index, player);
 
         let value = alphabeta(
-            new_board,
+            &new_board,
             depth - 1,
             !maximizing_player,
             alpha,
             beta,
-            switch_player(player),
+            next_player,
             *index,
             board_size,
             &indexes,

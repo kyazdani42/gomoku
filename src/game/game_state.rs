@@ -60,7 +60,7 @@ impl GameState {
             return;
         }
 
-        if let None = place_stone(self, index) {
+        if place_stone(self, index).is_none() {
             return;
         }
 
