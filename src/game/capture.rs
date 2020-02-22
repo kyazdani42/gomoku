@@ -57,7 +57,7 @@ pub fn is_capturable(
     board_size: usize,
     player: u8,
     player2: u8,
-    actions: &Vec<&str>,
+    actions: &[&str],
 ) -> bool {
     for action in actions {
         let split = action.split('|').collect::<Vec<&str>>();
@@ -116,25 +116,22 @@ fn get_potential_captured_indexes(
     action: &str,
     other_player: u8,
 ) -> bool {
-    let board_size = board_size;
     let i = match move_stone(index, board_size, action) {
         Some(i) if get_value(placed, i) == other_player => i,
         _ => return false,
     };
+
     let j = match move_stone(i, board_size, action) {
         Some(j) if get_value(placed, j) == other_player => j,
         _ => return false,
     };
 
     if let Some(index) = move_stone(j, board_size, action) {
-        if get_value(placed, index) == 0 {
-            return true;
-        }
+        return get_value(placed, index) == 0;
     };
 
     false
 }
-
 
 #[cfg(test)]
 mod tests {

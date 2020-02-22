@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 use super::{GameState, Player, Stones, ACTIONS};
 
 pub fn place_stone(state: &mut GameState, index: usize) -> Option<()> {
@@ -30,26 +30,27 @@ pub fn get_value(placed: &Stones, index: usize) -> Player {
     }
 }
 
-pub fn get_all_playable_indexes(placed: &Stones, board_size: usize) -> Vec<usize> {
-    let mut indexes = vec![];
-    for (i, v) in placed {
+pub fn get_all_playable_indexes(board: &Stones, board_size: usize) -> HashSet::<usize> {
+    let mut indexes = HashSet::new();
+    for (i, v) in board {
         if *v == 1 || *v == 2 {
-            for neighbour in get_empty_neighbours(placed, *i, board_size) {
-                if indexes.contains(&neighbour) {
-                    continue;
-                }
-                indexes.push(neighbour);
-            }
+            add_empty_neighbours(&mut indexes, board, *i, board_size);
         }
     }
 
     indexes
 }
 
-pub fn get_empty_neighbours(placed: &Stones, index: usize, board_size: usize) -> Vec<usize> {
+pub fn add_empty_neighbours(indexes: &mut HashSet<usize>, board: &Stones, index: usize, board_size: usize) {
+    for neighbour in get_empty_neighbours(board, index, board_size) {
+        indexes.insert(neighbour);
+    }
+}
+
+pub fn get_empty_neighbours(board: &Stones, index: usize, board_size: usize) -> Vec<usize> {
     ACTIONS.iter().fold(vec![], |mut neighbours, action| {
         if let Some(neighbour) = move_stone(index, board_size, action) {
-            if get_value(placed, neighbour) == 0 {
+            if get_value(board, neighbour) == 0 {
                 neighbours.push(neighbour);
             }
         }

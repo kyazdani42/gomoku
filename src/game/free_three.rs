@@ -34,7 +34,7 @@ pub fn set_free_threes(state: &mut GameState) {
 }
 
 pub fn check_double_free_threes(
-    placed: &Stones,
+    board: &Stones,
     index: usize,
     board_size: usize,
     player: u8,
@@ -53,7 +53,7 @@ pub fn check_double_free_threes(
     ];
     for (i, action) in actions.iter().enumerate() {
         if is_free_threes(
-            placed,
+            board,
             index,
             board_size,
             player,
@@ -71,7 +71,7 @@ pub fn check_double_free_threes(
 }
 
 pub fn is_free_threes(
-    placed: &Stones,
+    board: &Stones,
     index: usize,
     board_size: usize,
     player: u8,
@@ -81,63 +81,66 @@ pub fn is_free_threes(
 ) -> bool {
     let mut previous = move_stone(index, board_size, action_one);
     let mut next = move_stone(index, board_size, action_two);
-    if let Some(stone) = previous {
-        if get_value(placed, stone) == 0 {
-            if let Some(stone) = next {
-                if get_value(placed, stone) == 0 {
-                    next = move_stone(stone, board_size, action_two);
-                    return check_free_pattern(
-                        placed,
-                        next,
-                        vec![player, player, 0],
-                        action_two,
-                        board_size,
-                    );
-                } else if get_value(placed, stone) == player {
-                    next = move_stone(stone, board_size, action_two);
-                    if let Some(stone) = next {
-                        if get_value(placed, stone) == player {
-                            next = move_stone(stone, board_size, action_two);
-                            if let Some(stone) = next {
-                                if get_value(placed, stone) == 0 {
-                                    return true;
-                                }
+    if previous.is_none() {
+        return false;
+    }
+
+    let stone = previous.unwrap();
+    if get_value(board, stone) == 0 {
+        if let Some(stone) = next {
+            if get_value(board, stone) == 0 {
+                next = move_stone(stone, board_size, action_two);
+                return check_free_pattern(
+                    board,
+                    next,
+                    vec![player, player, 0],
+                    action_two,
+                    board_size,
+                );
+            } else if get_value(board, stone) == player {
+                next = move_stone(stone, board_size, action_two);
+                if let Some(stone) = next {
+                    if get_value(board, stone) == player {
+                        next = move_stone(stone, board_size, action_two);
+                        if let Some(stone) = next {
+                            if get_value(board, stone) == 0 {
+                                return true;
                             }
-                        } else if get_value(placed, stone) == 0 {
-                            next = move_stone(stone, board_size, action_two);
-                            return check_free_pattern(
-                                placed,
-                                next,
-                                vec![player, 0],
-                                action_two,
-                                board_size,
-                            );
                         }
+                    } else if get_value(board, stone) == 0 {
+                        next = move_stone(stone, board_size, action_two);
+                        return check_free_pattern(
+                            board,
+                            next,
+                            vec![player, 0],
+                            action_two,
+                            board_size,
+                        );
                     }
                 }
-            };
-        } else if get_value(placed, stone) == player {
-            previous = move_stone(stone, board_size, action_one);
-            if let Some(stone) = previous {
-                if get_value(placed, stone) == 0 {
-                    if let Some(stone) = next {
-                        if get_value(placed, stone) == player {
-                            next = move_stone(stone, board_size, action_two);
-                            if let Some(stone) = next {
-                                if get_value(placed, stone) == 0 {
-                                    return second_check == false;
-                                }
+            }
+        };
+    } else if get_value(board, stone) == player {
+        previous = move_stone(stone, board_size, action_one);
+        if let Some(stone) = previous {
+            if get_value(board, stone) == 0 {
+                if let Some(stone) = next {
+                    if get_value(board, stone) == player {
+                        next = move_stone(stone, board_size, action_two);
+                        if let Some(stone) = next {
+                            if get_value(board, stone) == 0 {
+                                return !second_check;
                             }
-                        } else if get_value(placed, stone) == 0 {
-                            next = move_stone(stone, board_size, action_two);
-                            return check_free_pattern(
-                                placed,
-                                next,
-                                vec![player, 0],
-                                action_two,
-                                board_size,
-                            );
                         }
+                    } else if get_value(board, stone) == 0 {
+                        next = move_stone(stone, board_size, action_two);
+                        return check_free_pattern(
+                            board,
+                            next,
+                            vec![player, 0],
+                            action_two,
+                            board_size,
+                        );
                     }
                 }
             }

@@ -1,12 +1,20 @@
 use std::cmp::{max, min};
+use std::collections::HashSet;
 use std::i32::{MAX, MIN};
 use std::time::Instant;
 
 use super::get_heuristics;
-use crate::game::{GameState,Stones};
-use crate::game::{get_all_playable_indexes, set_free_threes, switch_player};
+use crate::game::{
+    add_empty_neighbours, check_double_free_threes, get_all_playable_indexes, set_free_threes,
+    switch_player,
+};
+use crate::game::{GameState, Stones};
 
-static mut TOTAL: i32 = 0;
+static mut TOTAL: u128 = 0;
+static mut TOTAL2: u128 = 0;
+static mut TOTAL3: u128 = 0;
+static mut HITS: u128 = 0;
+
 pub fn compute(state: &GameState) -> usize {
     if state.placed.is_empty() {
         let board_size = state.board_size;
@@ -15,12 +23,18 @@ pub fn compute(state: &GameState) -> usize {
 
     let depth = 4;
 
-    unsafe { TOTAL = 0; }
+    unsafe {
+        TOTAL = 0;
+        TOTAL2 = 0;
+        TOTAL3 = 0;
+        HITS = 0;
+    }
 
     let board = state.placed.clone();
 
     let time = Instant::now();
-    let (_heuristic, best_index) = minimax(
+    let free_indexes = get_all_playable_indexes(&board, state.board_size);
+    let (heuristic, best_index) = alphabeta(
         board,
         depth,
         true,
@@ -29,17 +43,22 @@ pub fn compute(state: &GameState) -> usize {
         state.player,
         state.last_played,
         state.board_size,
+        &free_indexes,
     );
-    unsafe { println!("{}\n", TOTAL); }
-    println!("{}ms\n", time.elapsed().as_millis());
+    println!("For heuristic {} with {} hits:", heuristic, unsafe { HITS });
+    unsafe {
+        println!("total heuristic time: {}ms", TOTAL / 1_000_000);
+        println!("total index recuperation time: {}ms", TOTAL2 / 1_000_000);
+        println!("total cloning time: {}ms", TOTAL3 / 1_000_000);
+    }
+    println!("total compute time: {}ms\n", time.elapsed().as_millis());
 
     // println!("H: {}\n", best_value);
 
     best_index
 }
 
-
-fn minimax(
+fn alphabeta(
     board: Stones,
     depth: u8,
     maximizing_player: bool,
@@ -48,54 +67,74 @@ fn minimax(
     player: u8,
     last_played: usize,
     board_size: usize,
+    previous_free_indexes: &HashSet<usize>,
 ) -> (i32, usize) {
+    unsafe { HITS += 1 };
     let mut alpha = alpha;
-    let mut beta  = beta;
+    let mut beta = beta;
     if depth == 0 {
-        // node is a terminal node || heuristic == 0 {
-        let heuristic = get_heuristics(&board, last_played, board_size, player);
+        let time = Instant::now();
+        let heuristic = get_heuristics(&board, last_played, board_size, player); // this take a long time to complete
+                                                                                 // let heuristic = 1;
+        unsafe {
+            TOTAL += time.elapsed().as_nanos();
+        }
 
-        unsafe { TOTAL += 1; }
-        (heuristic, 0)
-    } else if maximizing_player {
-        let mut max_value = MIN;
-        let mut best_index = 0;
+        return (heuristic, 0);
+    }
 
-        let indexes = get_all_playable_indexes(&board, board_size);
-        for index in indexes {
-            let mut new_board = board.clone();
-            new_board.insert(index, player);
+    let time = Instant::now();
+    let mut indexes = previous_free_indexes.clone();
+    indexes.remove(&last_played);
+    add_empty_neighbours(&mut indexes, &board, last_played, board_size);
+    unsafe {
+        TOTAL2 += time.elapsed().as_nanos();
+    }
 
-            let value = minimax(new_board, depth - 1, false, alpha, beta, switch_player(player), index, board_size).0;
-            if max_value < value {
-                max_value = value;
-                best_index = index;
+    let mut best_value = if maximizing_player { MIN } else { MAX };
+    let mut best_index = 0;
+
+    for index in indexes
+        .iter()
+        .filter(|x| !check_double_free_threes(&board, **x, board_size, player))
+    {
+        let time = Instant::now();
+        let mut new_board = board.clone();
+        unsafe {
+            TOTAL3 += time.elapsed().as_nanos();
+        }
+        new_board.insert(*index, player);
+
+        let value = alphabeta(
+            new_board,
+            depth - 1,
+            !maximizing_player,
+            alpha,
+            beta,
+            switch_player(player),
+            *index,
+            board_size,
+            &indexes,
+        )
+        .0;
+
+        if maximizing_player {
+            if best_value < value {
+                best_value = value;
+                best_index = *index;
             }
             alpha = max(alpha, value);
             if beta < alpha {
                 break;
             }
-        }
-
-        (max_value, best_index)
-    } else {
-        let mut min_value = MAX;
-        let indexes = get_all_playable_indexes(&board, board_size);
-        for index in indexes {
-            let mut new_board = board.clone();
-            new_board.insert(index, player);
-
-            min_value = min(
-                min_value,
-                minimax(new_board, depth - 1, true, alpha, beta, switch_player(player), index, board_size).0,
-            );
-            beta = min(beta, min_value);
+        } else {
+            best_value = min(best_value, value);
+            beta = min(beta, best_value);
             if alpha < beta {
                 break;
             }
         }
-
-        (min_value, 0)
     }
-}
 
+    (best_value, best_index)
+}

@@ -14,7 +14,7 @@ pub fn win_by_capture(state: &GameState) -> bool {
 pub fn win_by_alignment(state: &mut GameState) {
     let alignments = get_alignments(state);
 
-    if alignments.len() == 0 {
+    if alignments.is_empty() {
         return;
     }
 
@@ -49,7 +49,7 @@ fn get_alignments(state: &GameState) -> Vec<Alignment> {
     let mut return_values: Vec<Alignment> = vec![];
     for actions in JOINED_ACTIONS.iter() {
         let mut aligned = vec![];
-        for (j, action) in actions.split('|').into_iter().enumerate() {
+        for (j, action) in actions.split('|').enumerate() {
             let stones = get_aligned_stones(
                 &state.placed,
                 state.last_played,
@@ -85,7 +85,7 @@ fn get_alignments(state: &GameState) -> Vec<Alignment> {
 
 fn is_brokable(
     placed: &Stones,
-    alignment: &Vec<usize>,
+    alignment: &[usize],
     player: u8,
     board_size: usize,
     directions: &str,
@@ -93,7 +93,7 @@ fn is_brokable(
     let actions = JOINED_ACTIONS
         .iter()
         .filter(|x| *x != &directions)
-        .map(|x| *x)
+        .copied()
         .collect::<Vec<&str>>();
     for index in alignment {
         if is_capturable(
@@ -111,17 +111,16 @@ fn is_brokable(
     false
 }
 
-fn get_indexes(alignment: &Vec<usize>) -> Vec<usize> {
+fn get_indexes(alignment: &[usize]) -> Vec<usize> {
     let extremities = get_extremities(alignment);
     alignment
-        .clone()
         .iter()
         .filter(|x| !extremities.contains(*x))
-        .map(|x| *x)
+        .copied()
         .collect()
 }
 
-fn get_extremities(alignment: &Vec<usize>) -> Vec<usize> {
+fn get_extremities(alignment: &[usize]) -> Vec<usize> {
     match alignment.len() {
         6 => vec![0, 5],
         7 => vec![0, 1, 5, 6],
@@ -153,7 +152,7 @@ fn get_aligned_stones(
 
 pub fn check_alignment_validity(placed: &Stones, alignment: &Vec<usize>) -> bool {
     for index in alignment.iter() {
-        if placed.contains_key(index) == false {
+        if !placed.contains_key(index) {
             return false;
         }
     }
