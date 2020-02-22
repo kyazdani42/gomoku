@@ -26,5 +26,5 @@ export const GameSelection = ({ setInitParam }) => {
 
 const handleSubmit = setInitParam => (ia, size) => e => {
   e.preventDefault();
-  setInitParam({ ia, size });
+  setInitParam({ ia: 1, size });
 };

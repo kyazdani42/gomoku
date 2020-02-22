@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use super::{GameState, Player, Stones, ACTIONS};
 
 pub fn place_stone(state: &mut GameState, index: usize) -> Option<()> {
@@ -34,6 +35,9 @@ pub fn get_all_playable_indexes(placed: &Stones, board_size: usize) -> Vec<usize
     for (i, v) in placed {
         if *v == 1 || *v == 2 {
             for neighbour in get_empty_neighbours(placed, *i, board_size) {
+                if indexes.contains(&neighbour) {
+                    continue;
+                }
                 indexes.push(neighbour);
             }
         }
