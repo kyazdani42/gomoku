@@ -45,15 +45,14 @@ pub fn compute(state: &GameState) -> usize {
         state.board_size,
         &free_indexes,
     );
-    println!("For heuristic {} with {} hits:", heuristic, unsafe { HITS });
+
     unsafe {
+        println!("For heuristic {} with {} hits:", heuristic, HITS);
         println!("total heuristic time: {}ms", TOTAL / 1_000_000);
         println!("total index recuperation time: {}ms", TOTAL2 / 1_000_000);
         println!("total cloning time: {}ms", TOTAL3 / 1_000_000);
+        println!("total compute time: {}ms\n", time.elapsed().as_millis());
     }
-    println!("total compute time: {}ms\n", time.elapsed().as_millis());
-
-    // println!("H: {}\n", best_value);
 
     best_index
 }
