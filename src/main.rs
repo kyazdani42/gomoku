@@ -4,8 +4,8 @@ use hyper::rt::Future;
 use hyper::service::service_fn;
 use hyper::Server;
 
-mod algorithm;
-mod game;
+// mod algorithm;
+mod lib;
 mod router;
 
 fn main() {
@@ -21,7 +21,7 @@ fn main() {
         }
     };
 
-    let state = Arc::new(Mutex::new(game::GameState::new()));
+    let state = Arc::new(Mutex::new(lib::State::new()));
 
     let server = server
         .serve(move || {
