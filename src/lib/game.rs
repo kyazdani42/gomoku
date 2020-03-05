@@ -27,7 +27,11 @@ impl Game {
             self.current_player
         // TODO: can optimize this by storing in Player
         } else if self.get_opponent().get_alignments(index).is_some() {
-            if self.current_player == 1 { 2 } else { 1 }
+            if self.current_player == 1 {
+                2
+            } else {
+                1
+            }
         } else {
             let alignments = self.get_player().get_alignments(index);
             // if self.get_player().can_alignments_be_captured() {}

@@ -16,18 +16,12 @@ impl Move {
             Move::Right => index % board_size < board_size - 1,
             Move::Top => board_size <= index,
             Move::Bottom => index / board_size < board_size - 1,
-            // TODO: there might be faster way to do those
-            Move::TopLeft => {
-                Move::Top.can_move(board_size, index) && Move::Left.can_move(board_size, index)
-            }
-            Move::TopRight => {
-                Move::Top.can_move(board_size, index) && Move::Right.can_move(board_size, index)
-            }
-            Move::BottomLeft => {
-                Move::Bottom.can_move(board_size, index) && Move::Left.can_move(board_size, index)
-            }
+            Move::TopLeft => board_size <= index && 0 < index % board_size,
+            Move::TopRight => board_size <= index && index % board_size < board_size - 1,
+            Move::BottomLeft => index / board_size < board_size - 1 && 0 < index % board_size,
             Move::BottomRight => {
-                Move::Bottom.can_move(board_size, index) && Move::Right.can_move(board_size, index)
+                let edge = board_size - 1;
+                index / board_size < edge && index % board_size < edge
             }
         }
     }
