@@ -20,6 +20,10 @@ impl Game {
         }
     }
 
+    pub fn place_stone(&mut self, index: i32) {
+        self.get_player_mut().tiles.push(index)
+    }
+
     pub fn update_captures(&mut self) {}
 
     pub fn get_winner(&self, index: i32) -> u8 {

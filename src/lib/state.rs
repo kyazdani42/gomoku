@@ -45,6 +45,7 @@ impl State {
             return;
         }
 
+        self.game.place_stone(index);
         self.game.update_captures();
         self.winner = self.game.get_winner(index);
 
