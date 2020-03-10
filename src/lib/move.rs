@@ -10,18 +10,28 @@ pub enum Move {
 }
 
 impl Move {
-    pub fn can_move(self, board_size: i32, index: i32) -> bool {
+    /// Check if we can move from `index` to a direction `depth` times
+    pub fn can_move_to(self, board_size: i32, index: i32, depth: i32) -> bool {
         match self {
-            Move::Left => 0 < index % board_size,
-            Move::Right => index % board_size < board_size - 1,
-            Move::Top => board_size <= index,
-            Move::Bottom => index / board_size < board_size - 1,
-            Move::TopLeft => board_size <= index && 0 < index % board_size,
-            Move::TopRight => board_size <= index && index % board_size < board_size - 1,
-            Move::BottomLeft => index / board_size < board_size - 1 && 0 < index % board_size,
+            Move::Left => index - depth > -1 && (index - depth) / board_size == index / board_size,
+            Move::Right => (index + depth) / board_size == index / board_size,
+            Move::Top => index - depth * board_size > -1,
+            Move::Bottom => index + depth * board_size < board_size * board_size,
+            Move::TopLeft => {
+                Move::Left.can_move_to(board_size, index, depth)
+                    && Move::Top.can_move_to(board_size, index, depth)
+            }
+            Move::TopRight => {
+                Move::Right.can_move_to(board_size, index, depth)
+                    && Move::Top.can_move_to(board_size, index, depth)
+            }
+            Move::BottomLeft => {
+                Move::Left.can_move_to(board_size, index, depth)
+                    && Move::Bottom.can_move_to(board_size, index, depth)
+            }
             Move::BottomRight => {
-                let edge = board_size - 1;
-                index / board_size < edge && index % board_size < edge
+                Move::Right.can_move_to(board_size, index, depth)
+                    && Move::Bottom.can_move_to(board_size, index, depth)
             }
         }
     }
@@ -45,58 +55,65 @@ mod tests {
     use super::Move;
 
     #[test]
-    fn left_false() {
-        let index = 0;
-        let board_size = 4;
-        assert_eq!(Move::Left.can_move(board_size, index), false);
+    fn can_move_to_left_true() {
+        let index = 5;
+        let board_size = 10;
+        assert_eq!(Move::Left.can_move_to(board_size, index, 5), true);
     }
 
     #[test]
-    fn left_true() {
-        let index = 1;
-        let board_size = 4;
-        assert_eq!(Move::Left.can_move(board_size, index), true);
-    }
-
-    #[test]
-    fn right_false() {
-        let index = 3;
-        let board_size = 4;
-        assert_eq!(Move::Right.can_move(board_size, index), false);
-    }
-
-    #[test]
-    fn right_true() {
-        let index = 2;
-        let board_size = 4;
-        assert_eq!(Move::Right.can_move(board_size, index), true);
-    }
-
-    #[test]
-    fn top_false() {
-        let index = 2;
-        let board_size = 4;
-        assert_eq!(Move::Top.can_move(board_size, index), false);
-    }
-
-    #[test]
-    fn top_true() {
+    fn can_move_to_left_false() {
         let index = 4;
-        let board_size = 4;
-        assert_eq!(Move::Top.can_move(board_size, index), true);
+        let board_size = 10;
+        assert_eq!(Move::Left.can_move_to(board_size, index, 5), false);
     }
 
     #[test]
-    fn bot_false() {
-        let index = 12;
-        let board_size = 4;
-        assert_eq!(Move::Bottom.can_move(board_size, index), false);
+    fn can_move_to_right_true() {
+        let index = 5;
+        let board_size = 10;
+        assert_eq!(Move::Right.can_move_to(board_size, index, 4), true);
     }
 
     #[test]
-    fn bot_true() {
-        let index = 11;
-        let board_size = 4;
-        assert_eq!(Move::Bottom.can_move(board_size, index), true);
+    fn can_move_to_right_false() {
+        let index = 5;
+        let board_size = 10;
+        assert_eq!(Move::Right.can_move_to(board_size, index, 5), false);
+    }
+
+    #[test]
+    fn can_move_to_right_end_false() {
+        let index = 99;
+        let board_size = 10;
+        assert_eq!(Move::Right.can_move_to(board_size, index, 1), false);
+    }
+
+    #[test]
+    fn can_move_to_top_true() {
+        let index = 24;
+        let board_size = 5;
+        assert_eq!(Move::Top.can_move_to(board_size, index, 4), true);
+    }
+
+    #[test]
+    fn can_move_to_top_false() {
+        let index = 19;
+        let board_size = 5;
+        assert_eq!(Move::Top.can_move_to(board_size, index, 4), false);
+    }
+
+    #[test]
+    fn can_move_to_bottom_true() {
+        let index = 0;
+        let board_size = 5;
+        assert_eq!(Move::Bottom.can_move_to(board_size, index, 4), true);
+    }
+
+    #[test]
+    fn can_move_to_bottom_false() {
+        let index = 0;
+        let board_size = 5;
+        assert_eq!(Move::Bottom.can_move_to(board_size, index, 5), false);
     }
 }
