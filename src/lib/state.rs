@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use super::game::Game;
 use super::analyze::analyze_index;
+use super::game::Game;
 
 #[derive(Serialize, Deserialize)]
 pub struct ResponseData {
@@ -19,6 +19,7 @@ pub struct State {
     time: u128,
     game: Game,
     winner: u8,
+    forbidden: Vec<i32>,
 }
 
 impl State {
@@ -28,32 +29,54 @@ impl State {
             time: 0,
             game: Game::new(0, 0),
             winner: 0,
+            forbidden: vec![],
         }
     }
 
     pub fn initialize(&mut self, board_size: u8, player: u8, ia: u8) {
         self.ia = ia;
         self.game.current_player = player;
-        self.game.board_size = board_size;
+        self.game.board_size = board_size as i32;
     }
 
     pub fn run(&mut self, index: i32) {
         if self.game.player1.contains(index)
             || self.game.player2.contains(index)
-            || self.game.forbidden.contains(&index)
+            || self.forbidden.contains(&index)
             || !self.game.valid_index(index)
         {
             return;
         }
 
-        let index_data = analyze_index(index, &self.game.get_player(), &self.game.get_opponent());
+        let index_data = analyze_index(
+            index,
+            self.game.board_size,
+            &self.game.get_player(),
+            &self.game.get_opponent(),
+        );
 
         self.game.place_stone(index);
         self.game.update_captures(&index_data.captured);
+        self.game.update_empty_neighbours(index);
         self.winner = self.game.get_winner(index);
 
         self.game.switch_player(index);
-        self.game.refresh_free_three();
+        self.update_forbidden();
+    }
+
+    fn update_forbidden(&mut self) {
+        self.forbidden.clear();
+        for neighbour in &self.game.empty_neighbours {
+            let data = analyze_index(
+                *neighbour,
+                self.game.board_size,
+                &self.game.get_player(),
+                &self.game.get_opponent(),
+            );
+            if data.double_free_three {
+                self.forbidden.push(*neighbour);
+            }
+        }
     }
 
     pub fn get_data(&self) -> ResponseData {
@@ -76,7 +99,7 @@ impl State {
                 board.push(1);
             } else if self.game.player2.contains(idx) {
                 board.push(2);
-            } else if self.game.forbidden.contains(&idx) {
+            } else if self.forbidden.contains(&idx) {
                 board.push(3);
             } else {
                 board.push(0);

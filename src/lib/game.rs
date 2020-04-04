@@ -1,20 +1,32 @@
 use super::player::Player;
+use super::r#move::Move;
+
+const MOVES: [Move; 8] = [
+    Move::Left,
+    Move::Right,
+    Move::Top,
+    Move::Bottom,
+    Move::TopLeft,
+    Move::TopRight,
+    Move::BottomLeft,
+    Move::BottomRight,
+];
 
 #[derive(Clone)]
 pub struct Game {
     pub player1: Player,
     pub player2: Player,
     pub current_player: u8,
-    pub board_size: u8,
-    pub forbidden: Vec<i32>,
+    pub board_size: i32,
+    pub empty_neighbours: Vec<i32>,
 }
 
 impl Game {
-    pub fn new(current_player: u8, board_size: u8) -> Game {
+    pub fn new(current_player: u8, board_size: i32) -> Game {
         Game {
             player1: Player::new(),
             player2: Player::new(),
-            forbidden: vec![],
+            empty_neighbours: vec![],
             current_player,
             board_size,
         }
@@ -27,6 +39,33 @@ impl Game {
     pub fn update_captures(&mut self, captured: &Vec<i32>) {
         self.get_player_mut().captured += captured.len() as u8;
         self.get_opponent_mut().remove(captured);
+    }
+
+    pub fn update_empty_neighbours(&mut self, index: i32) {
+        for direction in MOVES.iter() {
+            if direction.can_move_to(self.board_size, index, 1) {
+                let neighbour = direction.get_next_index(self.board_size, index);
+                if !self.empty_neighbours.contains(&neighbour)
+                    && !self.get_player().contains(neighbour)
+                    && !self.get_opponent().contains(neighbour)
+                {
+                    self.empty_neighbours.push(neighbour);
+                }
+            }
+            if direction.can_move_to(self.board_size, index, 2) {
+                let neighbour = direction.get_index_mult(self.board_size, index, 2);
+                if !self.empty_neighbours.contains(&neighbour)
+                    && !self.get_player().contains(neighbour)
+                    && !self.get_opponent().contains(neighbour)
+                {
+                    self.empty_neighbours.push(neighbour);
+                }
+            }
+        }
+
+        if self.empty_neighbours.contains(&index) {
+            self.empty_neighbours.retain(|&x| x != index);
+        }
     }
 
     pub fn get_winner(&self, index: i32) -> u8 {
@@ -50,10 +89,8 @@ impl Game {
         }
     }
 
-    pub fn refresh_free_three(&mut self) {}
-
     pub fn get_total_size(&self) -> i32 {
-        self.board_size as i32 * self.board_size as i32
+        self.board_size * self.board_size
     }
 
     pub fn valid_index(&self, index: i32) -> bool {
@@ -89,7 +126,7 @@ impl Game {
         }
     }
 
-    fn get_player_mut(&mut self) -> &mut Player {
+    pub fn get_player_mut(&mut self) -> &mut Player {
         if self.current_player == 1 {
             &mut self.player1
         } else {
