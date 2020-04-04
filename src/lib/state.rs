@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::game::Game;
+use super::analyze::analyze_index;
 
 #[derive(Serialize, Deserialize)]
 pub struct ResponseData {
@@ -45,8 +46,10 @@ impl State {
             return;
         }
 
+        let index_data = analyze_index(index, &self.game.get_player(), &self.game.get_opponent());
+
         self.game.place_stone(index);
-        self.game.update_captures();
+        self.game.update_captures(&index_data.captured);
         self.winner = self.game.get_winner(index);
 
         self.game.switch_player(index);

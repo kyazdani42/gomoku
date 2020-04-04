@@ -24,7 +24,10 @@ impl Game {
         self.get_player_mut().tiles.push(index)
     }
 
-    pub fn update_captures(&mut self) {}
+    pub fn update_captures(&mut self, captured: &Vec<i32>) {
+        self.get_player_mut().captured += captured.len() as u8;
+        self.get_opponent().remove(captured);
+    }
 
     pub fn get_winner(&self, index: i32) -> u8 {
         if 9 < self.get_player().captured {
@@ -62,7 +65,7 @@ impl Game {
         self.current_player = if self.current_player == 1 { 2 } else { 1 };
     }
 
-    fn get_player(&self) -> &Player {
+    pub fn get_player(&self) -> &Player {
         if self.current_player == 1 {
             &self.player1
         } else {
@@ -70,11 +73,19 @@ impl Game {
         }
     }
 
-    fn get_opponent(&self) -> &Player {
+    pub fn get_opponent(&self) -> &Player {
         if self.current_player == 1 {
             &self.player2
         } else {
             &self.player1
+        }
+    }
+
+    pub fn get_opponent_mut(&mut self) -> &mut Player {
+        if self.current_player == 1 {
+            &mut self.player2
+        } else {
+            &mut self.player1
         }
     }
 

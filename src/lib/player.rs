@@ -38,6 +38,10 @@ impl Player {
         self.tiles.contains(&tile)
     }
 
+    pub fn remove(&mut self, tiles: &Vec<i32>) {
+        let _ = self.tiles.retain(|&x| !tiles.contains(&x));
+    }
+
     // TODO: there might be better way to store those
     pub fn get_alignments(&self, index: i32) -> Option<Vec<Vec<i32>>> {
         None
