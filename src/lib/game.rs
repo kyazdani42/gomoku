@@ -26,7 +26,7 @@ impl Game {
 
     pub fn update_captures(&mut self, captured: &Vec<i32>) {
         self.get_player_mut().captured += captured.len() as u8;
-        self.get_opponent().remove(captured);
+        self.get_opponent_mut().remove(captured);
     }
 
     pub fn get_winner(&self, index: i32) -> u8 {
