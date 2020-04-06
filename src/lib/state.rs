@@ -1,3 +1,4 @@
+use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use super::analyze::analyze_index;
@@ -34,9 +35,13 @@ impl State {
     }
 
     pub fn initialize(&mut self, board_size: u8, player: u8, ia: u8) {
-        self.ia = ia;
-        self.game.current_player = player;
-        self.game.board_size = board_size as i32;
+        *self = State {
+            ia,
+            time: 0,
+            game: Game::new(player, board_size as i32),
+            winner: 0,
+            forbidden: vec![],
+        };
     }
 
     pub fn run(&mut self, index: i32) {
@@ -53,15 +58,22 @@ impl State {
             self.game.board_size,
             &self.game.get_player(),
             &self.game.get_opponent(),
+            &self.game.oponent_alignments
         );
 
         self.game.place_stone(index);
+        self.game.update_oponent_alignments(&index_data.alignments);
         self.game.update_captures(&index_data.captured);
         self.game.update_empty_neighbours(index);
-        self.winner = self.game.get_winner(index);
 
-        self.game.switch_player(index);
-        self.update_forbidden();
+        if index_data.win {
+            self.winner = if self.game.current_player == 1 { 1 } else { 2 };
+        } else if index_data.oponent_win {
+            self.winner = if self.game.current_player == 1 { 2 } else { 1 };
+        } else {
+            self.game.switch_player(index);
+            self.update_forbidden();
+        }
     }
 
     fn update_forbidden(&mut self) {
@@ -72,6 +84,7 @@ impl State {
                 self.game.board_size,
                 &self.game.get_player(),
                 &self.game.get_opponent(),
+                &vec![]
             );
             if data.double_free_three {
                 self.forbidden.push(*neighbour);

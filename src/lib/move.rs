@@ -1,5 +1,6 @@
 use std::cmp::min;
 
+#[derive(Clone)]
 pub enum Move {
     Left,
     Right,

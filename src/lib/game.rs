@@ -19,6 +19,7 @@ pub struct Game {
     pub current_player: u8,
     pub board_size: i32,
     pub empty_neighbours: Vec<i32>,
+    pub oponent_alignments: Vec<Vec<i32>>
 }
 
 impl Game {
@@ -27,6 +28,7 @@ impl Game {
             player1: Player::new(),
             player2: Player::new(),
             empty_neighbours: vec![],
+            oponent_alignments: vec![],
             current_player,
             board_size,
         }
@@ -65,27 +67,6 @@ impl Game {
 
         if self.empty_neighbours.contains(&index) {
             self.empty_neighbours.retain(|&x| x != index);
-        }
-    }
-
-    pub fn get_winner(&self, index: i32) -> u8 {
-        if 9 < self.get_player().captured {
-            self.current_player
-        // TODO: can optimize this by storing in Player
-        } else if self.get_opponent().get_alignments(index).is_some() {
-            if self.current_player == 1 {
-                2
-            } else {
-                1
-            }
-        } else {
-            let alignments = self.get_player().get_alignments(index);
-            // if self.get_player().can_alignments_be_captured() {}
-            if alignments.is_none() {
-                0
-            } else {
-                self.current_player
-            }
         }
     }
 
@@ -132,5 +113,9 @@ impl Game {
         } else {
             &mut self.player2
         }
+    }
+
+    pub fn update_oponent_alignments(&mut self, alignments: &Vec<Vec<i32>>) {
+        self.oponent_alignments = alignments.to_vec();
     }
 }
