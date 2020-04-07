@@ -82,7 +82,12 @@ pub fn analyze_index(
                 if player.contains(i) {
                     if count == 1 || count == 2 {
                         capture_ok = false
+                    } else if count == 3 && capture_ok {
+                        for capture in &captured {
+                            data.captured.push(*capture);
+                        }
                     }
+
                     if align_ok {
                         if count == 1 {
                             aligned.insert(0, i);
@@ -144,11 +149,6 @@ pub fn analyze_index(
                 }
             }
 
-            if capture_ok {
-                for capture in captured {
-                    data.captured.push(capture);
-                }
-            }
         }
 
         if aligned.len() > 4 {
@@ -183,8 +183,21 @@ pub fn analyze_index(
     } else {
         let num_alignments = data.alignments.len();
         if num_alignments > 1 || (num_alignments > 0 && data.alignments[0].len() == 0) {
+            let catchers = get_catcher_indexes(player, oponent);
+            let mut maxCaptures = 0;
+            for catcher in &catchers {
+                let mut tmpMaxCaptures = 0;
+                for c in &catchers {
+                    if (catcher == c) {
+                        tmpMaxCaptures += 1;
+                    }
+                }
+                maxCaptures = if maxCaptures > tmpMaxCaptures {maxCaptures} else {tmpMaxCaptures}
+            }
             // TODO: checker toutes les pieces du joueur afin de determiner s'il peut gagner par capture
-            data.win = true; // todo <
+            if oponent.captured + maxCaptures < 10 {
+                data.win = true
+            }
         }
     }
 
@@ -253,6 +266,71 @@ fn get_capturable_indexes(
     }
 
     capturable
+}
+
+fn get_catcher_indexes(
+    player: &Player,
+    oponent: &Player,
+) -> Vec<i32> {
+    let mut catchers = vec![];
+
+    for tile in &player.tiles {
+        for moves in &STRAIGHT_MOVES {
+            let first_move = &moves[0];
+            let second_move = &moves[1];
+            let tile = *tile;
+            if !first_move.can_move_to(19, tile, 1) || !second_move.can_move_to(19, tile, 1) {
+                continue;
+            }
+
+            let first_move_index = first_move.get_next_index(19, tile);
+            let second_move_index = second_move.get_next_index(19, tile);
+
+            let first_value = get_value(player, oponent, first_move_index);
+            let second_value = get_value(player, oponent, second_move_index);
+
+            if first_value == 1 && second_value != 1 {
+                if !first_move.can_move_to(19, tile, 2) {
+                    continue;
+                }
+
+                let edge_value_index = first_move.get_index_mult(19, tile, 2);
+
+                let edge_value = get_value(player, oponent, edge_value_index);
+                if edge_value == 1 {
+                    continue;
+                }
+
+                if edge_value != second_value {
+                    if (edge_value == 0) {
+                        catchers.push(edge_value_index);
+                    } else {
+                        catchers.push(second_move_index);
+                    }
+                }
+            } else if second_value == 1 && first_value != 1 {
+                if !second_move.can_move_to(19, tile, 2) {
+                    continue;
+                }
+
+                let edge_value_index = second_move.get_index_mult(19, tile, 2);
+                let edge_value = get_value(player, oponent, edge_value_index);
+                if edge_value == 1 {
+                    continue;
+                }
+
+                if edge_value != first_value {
+                    if (edge_value == 0) {
+                        catchers.push(edge_value_index);
+                    } else {
+                        catchers.push(first_move_index);
+                    }
+                }
+            }
+        }
+    }
+
+    catchers
 }
 
 fn get_value(player: &Player, oponent: &Player, index: i32) -> u8 {
