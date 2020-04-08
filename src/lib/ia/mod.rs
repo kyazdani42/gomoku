@@ -1,4 +1,4 @@
-mod ia;
+mod algorithm;
 mod heuristic;
 
-pub use ia::*;
+pub use algorithm::run;

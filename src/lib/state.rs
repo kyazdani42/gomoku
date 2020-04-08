@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::analyze::analyze_index;
 use super::game::Game;
+use super::ia;
 
 #[derive(Serialize, Deserialize)]
 pub struct ResponseData {
@@ -80,8 +81,10 @@ impl State {
             self.winner = if self.game.current_player == 1 { 2 } else { 1 };
         } else {
             self.game.switch_player(index);
-            // TODO: la on lance l'ia ici
-            self.best_index = 0;
+
+            let mut best_indexes = ia::run(&self.game);
+            self.best_index = best_indexes.pop().unwrap();
+
             self.update_forbidden();
         }
     }
