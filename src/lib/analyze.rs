@@ -1,6 +1,7 @@
 use super::player::Player;
 use super::r#move::Move;
 use std::cmp::min;
+use std::collections::HashMap;
 
 type Capturable = Vec<i32>;
 
@@ -9,7 +10,7 @@ pub struct AnalyzedIndex {
     pub alignments: Vec<Capturable>,
     pub double_free_three: bool,
     pub win: bool,
-    pub oponent_win: bool
+    pub oponent_win: bool,
 }
 
 const STRAIGHT_MOVES: [[Move; 2]; 4] = [
@@ -24,7 +25,7 @@ pub fn analyze_index(
     board_size: i32,
     player: &Player,
     oponent: &Player,
-    oponent_alignments: &Vec<Vec<i32>>
+    oponent_alignments: &Vec<Vec<i32>>,
 ) -> AnalyzedIndex {
     let mut free_threes: u8 = 0;
     let mut data = AnalyzedIndex {
@@ -32,7 +33,7 @@ pub fn analyze_index(
         alignments: vec![],
         double_free_three: false,
         win: false,
-        oponent_win: false
+        oponent_win: false,
     };
 
     let mut counter = 0;
@@ -49,7 +50,7 @@ pub fn analyze_index(
                     alignments: vec![],
                     double_free_three: true,
                     win: false,
-                    oponent_win: false
+                    oponent_win: false,
                 };
             }
 
@@ -101,15 +102,14 @@ pub fn analyze_index(
                 } else if oponent.contains(i) {
                     if (count == 1 || count == 2) && capture_ok {
                         captured.push(i);
-                    } else if count == 3 {
-                        capture_ok = false;
                     }
+
                     align_ok = false;
                     if check_ft == 0 && check_ft_sequence {
                         check_ft_sequence = false;
                     }
                 } else {
-                    if count < 4 {
+                    if count < 3 {
                         capture_ok = false
                     }
                     if check_ft_sequence {
@@ -148,7 +148,6 @@ pub fn analyze_index(
                     }
                 }
             }
-
         }
 
         if aligned.len() > 4 {
@@ -184,18 +183,16 @@ pub fn analyze_index(
         let num_alignments = data.alignments.len();
         if num_alignments > 1 || (num_alignments > 0 && data.alignments[0].len() == 0) {
             let catchers = get_catcher_indexes(player, oponent);
-            let mut maxCaptures = 0;
-            for catcher in &catchers {
-                let mut tmpMaxCaptures = 0;
-                for c in &catchers {
-                    if (catcher == c) {
-                        tmpMaxCaptures += 1;
-                    }
+
+            let max_captures = catchers.iter().fold(0, |max_c, catcher| {
+                if max_c > *catcher.1 {
+                    max_c
+                } else {
+                    *catcher.1
                 }
-                maxCaptures = if maxCaptures > tmpMaxCaptures {maxCaptures} else {tmpMaxCaptures}
-            }
-            // TODO: checker toutes les pieces du joueur afin de determiner s'il peut gagner par capture
-            if oponent.captured + maxCaptures < 10 {
+            });
+
+            if oponent.captured as i32 + max_captures < 10 {
                 data.win = true
             }
         }
@@ -268,11 +265,8 @@ fn get_capturable_indexes(
     capturable
 }
 
-fn get_catcher_indexes(
-    player: &Player,
-    oponent: &Player,
-) -> Vec<i32> {
-    let mut catchers = vec![];
+fn get_catcher_indexes(player: &Player, oponent: &Player) -> HashMap<i32, i32> {
+    let mut catchers = HashMap::new();
 
     for tile in &player.tiles {
         for moves in &STRAIGHT_MOVES {
@@ -302,11 +296,17 @@ fn get_catcher_indexes(
                 }
 
                 if edge_value != second_value {
-                    if (edge_value == 0) {
-                        catchers.push(edge_value_index);
+                    let value_index = if edge_value == 0 {
+                        edge_value_index
                     } else {
-                        catchers.push(second_move_index);
-                    }
+                        second_move_index
+                    };
+                    let value = if let Some(value) = catchers.get(&value_index) {
+                        *value + 1
+                    } else {
+                        1
+                    };
+                    catchers.insert(value_index, value);
                 }
             } else if second_value == 1 && first_value != 1 {
                 if !second_move.can_move_to(19, tile, 2) {
@@ -320,11 +320,17 @@ fn get_catcher_indexes(
                 }
 
                 if edge_value != first_value {
-                    if (edge_value == 0) {
-                        catchers.push(edge_value_index);
+                    let value_index = if edge_value == 0 {
+                        edge_value_index
                     } else {
-                        catchers.push(first_move_index);
-                    }
+                        first_move_index
+                    };
+                    let value = if let Some(value) = catchers.get(&value_index) {
+                        *value + 1
+                    } else {
+                        1
+                    };
+                    catchers.insert(value_index, value);
                 }
             }
         }
