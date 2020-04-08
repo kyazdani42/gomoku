@@ -72,6 +72,7 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
 
     let mut state = state.lock().unwrap();
     state.run(index as i32);
+    state.run_ia();
 
     get_response_data(&state)
 }
@@ -93,8 +94,9 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<State>>) -> Opt
     }
 
     let mut state = state.lock().unwrap();
-    let player = if ia == 1 { 2 } else { 1 };
-    state.initialize(board_size as u8, player, ia);
+
+    state.initialize(board_size as u8, ia);
+    state.run_ia();
 
     get_response_data(&state)
 }

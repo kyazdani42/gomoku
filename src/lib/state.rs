@@ -1,4 +1,3 @@
-use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use super::analyze::analyze_index;
@@ -16,6 +15,7 @@ pub struct ResponseData {
 }
 
 pub struct State {
+    best_index: i32,
     ia: u8,
     time: u128,
     game: Game,
@@ -28,20 +28,28 @@ impl State {
         State {
             ia: 0,
             time: 0,
-            game: Game::new(0, 0),
+            game: Game::new(19),
             winner: 0,
             forbidden: vec![],
+            best_index: 0,
         }
     }
 
-    pub fn initialize(&mut self, board_size: u8, player: u8, ia: u8) {
+    pub fn initialize(&mut self, board_size: u8, ia: u8) {
         *self = State {
             ia,
             time: 0,
-            game: Game::new(player, board_size as i32),
+            game: Game::new(board_size as i32),
             winner: 0,
             forbidden: vec![],
+            best_index: board_size as i32 * board_size as i32 / 2,
         };
+    }
+
+    pub fn run_ia(&mut self) {
+        if self.should_run_ia() {
+            self.run(self.best_index);
+        }
     }
 
     pub fn run(&mut self, index: i32) {
@@ -58,7 +66,7 @@ impl State {
             self.game.board_size,
             &self.game.get_player(),
             &self.game.get_opponent(),
-            &self.game.oponent_alignments
+            &self.game.oponent_alignments,
         );
 
         self.game.place_stone(index);
@@ -72,8 +80,14 @@ impl State {
             self.winner = if self.game.current_player == 1 { 2 } else { 1 };
         } else {
             self.game.switch_player(index);
+            // TODO: la on lance l'ia ici
+            self.best_index = 0;
             self.update_forbidden();
         }
+    }
+
+    fn should_run_ia(&self) -> bool {
+        self.ia == self.game.current_player
     }
 
     fn update_forbidden(&mut self) {
@@ -84,7 +98,7 @@ impl State {
                 self.game.board_size,
                 &self.game.get_player(),
                 &self.game.get_opponent(),
-                &vec![]
+                &vec![],
             );
             if data.double_free_three {
                 self.forbidden.push(*neighbour);

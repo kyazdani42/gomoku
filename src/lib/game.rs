@@ -23,13 +23,13 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(current_player: u8, board_size: i32) -> Game {
+    pub fn new(board_size: i32) -> Game {
         Game {
             player1: Player::new(),
             player2: Player::new(),
             empty_neighbours: vec![],
             oponent_alignments: vec![],
-            current_player,
+            current_player: 1,
             board_size,
         }
     }
