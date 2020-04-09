@@ -71,7 +71,7 @@ impl State {
         );
 
         self.game.place_stone(index);
-        self.game.update_oponent_alignments(&index_data.alignments);
+        self.game.update_oponent_alignments(index_data.alignments);
         self.game.update_captures(&index_data.captured);
         self.game.update_empty_neighbours(index);
 
@@ -82,7 +82,7 @@ impl State {
         } else {
             self.game.switch_player(index);
 
-            let mut best_indexes = ia::run(&self.game);
+            let mut best_indexes = ia::run(&mut self.game);
             self.best_index = best_indexes.pop().unwrap();
 
             self.update_forbidden();

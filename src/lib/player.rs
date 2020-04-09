@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+
 #[derive(Clone)]
 pub struct Player {
-    pub tiles: Vec<i32>,
+    pub tiles: HashSet<i32>,
     pub last_played: i32,
     pub captured: u8,
 }
@@ -8,7 +10,7 @@ pub struct Player {
 impl Player {
     pub fn new() -> Player {
         Player {
-            tiles: vec![],
+            tiles: HashSet::new(),
             last_played: 0,
             captured: 0,
         }
@@ -18,7 +20,23 @@ impl Player {
         self.tiles.contains(&tile)
     }
 
-    pub fn remove(&mut self, tiles: &Vec<i32>) {
-        let _ = self.tiles.retain(|&x| !tiles.contains(&x));
+    pub fn insert(&mut self, tile: i32) {
+        self.tiles.insert(tile);
+    }
+
+    pub fn insert_mult(&mut self, tiles: &Vec<i32>) {
+        tiles.iter().for_each(|tile| {
+            self.insert(*tile);
+        });
+    }
+
+    pub fn remove(&mut self, tile: i32) {
+        self.tiles.remove(&tile);
+    }
+
+    pub fn remove_mult(&mut self, tiles: &Vec<i32>) {
+        tiles.iter().for_each(|tile| {
+            self.remove(*tile);
+        });
     }
 }
