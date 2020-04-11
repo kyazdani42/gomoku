@@ -41,7 +41,7 @@ fn main() {
 
     let state = &mut state;
 
-    for tile in vec![11, 28, 32, 49, 51, 63, 73, 82, 91, 100, 120, 119, 130, 140, 210, 189, 38, 44] {
+    for tile in vec![(10, 10), (11, 15), (13, 2), (9, 2), (3, 9), (11, 9), (18, 2), (12, 3), (15, 12), (15, 13), (12, 13)] {
         let now = Instant::now();
         state.run(tile);
         println!("total time: {}ms", now.elapsed().as_millis());

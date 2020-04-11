@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::analyze::analyze_index;
-use super::game::Game;
+use super::game::{Game, Tile};
 use super::ia;
 
 #[derive(Serialize, Deserialize)]
@@ -16,12 +15,11 @@ pub struct ResponseData {
 }
 
 pub struct State {
-    best_index: i32,
     ia: u8,
     time: u128,
     game: Game,
     winner: u8,
-    forbidden: Vec<i32>,
+    best_index: Tile,
 }
 
 impl State {
@@ -31,8 +29,7 @@ impl State {
             time: 0,
             game: Game::new(19),
             winner: 0,
-            forbidden: vec![],
-            best_index: 0,
+            best_index: (0, 0),
         }
     }
 
@@ -42,8 +39,7 @@ impl State {
             time: 0,
             game: Game::new(board_size as i32),
             winner: 0,
-            forbidden: vec![],
-            best_index: board_size as i32 * board_size as i32 / 2,
+            best_index: (board_size as i32 / 2, board_size as i32 / 2),
         };
     }
 
@@ -53,34 +49,23 @@ impl State {
         }
     }
 
-    pub fn run(&mut self, index: i32) {
-        if self.game.player1.contains(index)
-            || self.game.player2.contains(index)
-            || self.forbidden.contains(&index)
-            || !self.game.valid_index(index)
-        {
+    pub fn run(&mut self, tile: Tile) {
+        if !self.game.validate_tile(tile) || self.game.get_tile_value(tile) != 0 {
             return;
         }
 
-        let index_data = analyze_index(
-            index,
-            self.game.board_size,
-            &self.game.get_player(),
-            &self.game.get_opponent(),
-            &self.game.oponent_alignments,
-        );
-
-        self.game.place_stone(index);
-        self.game.update_oponent_alignments(index_data.alignments);
+        let index_data = self.game.analyze(tile);
+        self.game.insert_tile(tile);
+        self.game.update_opponent_alignments(index_data.alignments);
         self.game.update_captures(&index_data.captured);
-        self.game.update_empty_neighbours(index);
+        self.game.update_empty_neighbours(tile);
 
         if index_data.win {
-            self.winner = if self.game.current_player == 1 { 1 } else { 2 };
+            self.winner = self.game.current_player
         } else if index_data.oponent_win {
-            self.winner = if self.game.current_player == 1 { 2 } else { 1 };
+            self.winner = self.game.opponent_player
         } else {
-            self.game.switch_player(index);
+            self.game.switch_player(tile);
 
             let mut best_indexes = ia::run(&mut self.game);
             self.best_index = best_indexes.pop().unwrap();
@@ -93,18 +78,23 @@ impl State {
         self.ia == self.game.current_player
     }
 
+    fn reset_forbidden(&mut self) {
+        for line in 0..self.game.board_size {
+            for col in 0..self.game.board_size {
+                if self.game.get_tile_value((line, col)) == 3 {
+                    self.game.remove_tile((line, col));
+                }
+            }
+        }
+    }
+
     fn update_forbidden(&mut self) {
-        self.forbidden.clear();
-        for neighbour in &self.game.empty_neighbours {
-            let data = analyze_index(
-                *neighbour,
-                self.game.board_size,
-                &self.game.get_player(),
-                &self.game.get_opponent(),
-                &vec![],
-            );
+        self.reset_forbidden();
+        let empty_neighbours = self.game.empty_neighbours.clone();
+        for neighbour in empty_neighbours {
+            let data = self.game.analyze(neighbour);
             if data.double_free_three {
-                self.forbidden.push(*neighbour);
+                self.game.insert_forbidden(neighbour);
             }
         }
     }
@@ -122,20 +112,6 @@ impl State {
     }
 
     fn get_board(&self) -> Vec<u8> {
-        let mut board = vec![];
-
-        for idx in 0..self.game.get_total_size() {
-            if self.game.player1.contains(idx) {
-                board.push(1);
-            } else if self.game.player2.contains(idx) {
-                board.push(2);
-            } else if self.forbidden.contains(&idx) {
-                board.push(3);
-            } else {
-                board.push(0);
-            }
-        }
-
-        board
+        self.game.board.concat()
     }
 }

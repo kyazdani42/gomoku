@@ -1,3 +1,4 @@
+use super::analyze::{analyze_index, AnalyzedTile};
 use super::player::Player;
 use super::r#move::Move;
 use std::collections::HashSet;
@@ -13,83 +14,109 @@ const MOVES: [Move; 8] = [
     Move::BottomRight,
 ];
 
+pub type Tile = (i32, i32);
+
 #[derive(Clone)]
 pub struct Game {
     pub player1: Player,
     pub player2: Player,
     pub current_player: u8,
+    pub opponent_player: u8,
     pub board_size: i32,
-    pub empty_neighbours: HashSet<i32>,
-    pub oponent_alignments: Vec<Vec<i32>>,
+    pub board: Vec<Vec<u8>>,
+    pub empty_neighbours: HashSet<Tile>,
+    pub opponent_alignments: Vec<Vec<Tile>>,
 }
 
 impl Game {
     pub fn new(board_size: i32) -> Game {
         Game {
+            current_player: 1,
+            opponent_player: 2,
             player1: Player::new(),
             player2: Player::new(),
             empty_neighbours: HashSet::new(),
-            oponent_alignments: vec![],
-            current_player: 1,
+            opponent_alignments: vec![],
+            board: (0..board_size)
+                .map(|_| (0..board_size).map(|_| 0).collect::<Vec<u8>>())
+                .collect(),
             board_size,
         }
     }
 
-    pub fn update_game(&mut self, index: i32, alignments: Vec<Vec<i32>>, captured: &Vec<i32>) {
-        self.place_stone(index);
-        self.update_oponent_alignments(alignments);
+    pub fn update_game(&mut self, tile: Tile, alignments: Vec<Vec<Tile>>, captured: &Vec<Tile>) {
+        self.insert_tile(tile);
+        self.update_opponent_alignments(alignments);
         self.update_captures(captured);
-        self.update_empty_neighbours(index);
-        self.switch_player(index);
+        self.update_empty_neighbours(tile);
+        self.switch_player(tile);
     }
 
     pub fn reset_game(
         &mut self,
-        index: i32,
-        alignments: Vec<Vec<i32>>,
-        captured: &Vec<i32>,
-        empty_neighbours: &HashSet<i32>,
+        tile: Tile,
+        alignments: Vec<Vec<Tile>>,
+        captured: &Vec<Tile>,
+        empty_neighbours: &HashSet<Tile>,
     ) {
-        self.switch_player(index);
-        self.remove_stone(index);
-        self.update_oponent_alignments(alignments);
+        self.reset_switch_player();
+        self.remove_tile(tile);
+        self.update_opponent_alignments(alignments);
         self.reset_captures(captured);
         self.empty_neighbours = empty_neighbours.clone();
     }
 
-    pub fn place_stone(&mut self, index: i32) {
-        self.get_player_mut().insert(index);
+    pub fn analyze(&self, tile: Tile) -> AnalyzedTile {
+        analyze_index(tile, self)
     }
 
-    pub fn remove_stone(&mut self, index: i32) {
-        self.get_player_mut().remove(index);
+    pub fn insert_tile(&mut self, tile: Tile) {
+        self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
     }
 
-    pub fn update_captures(&mut self, captured: &Vec<i32>) {
+    pub fn insert_forbidden(&mut self, tile: Tile) {
+        self.board[tile.0 as usize][tile.1 as usize] = 3;
+    }
+
+    pub fn remove_tile(&mut self, tile: Tile) {
+        self.board[tile.0 as usize][tile.1 as usize] = 0;
+    }
+
+    pub fn get_tile_value(&self, tile: Tile) -> u8 {
+        self.board[tile.0 as usize][tile.1 as usize]
+    }
+
+    pub fn validate_tile(&self, tile: Tile) -> bool {
+        -1 < tile.0 && tile.0 < self.board_size && -1 < tile.1 && tile.1 < self.board_size
+    }
+
+    pub fn update_captures(&mut self, captured: &Vec<Tile>) {
         self.get_player_mut().captured += captured.len() as u8;
-        self.get_opponent_mut().remove_mult(captured);
+        for tile in captured {
+            self.remove_tile(*tile);
+        }
     }
 
-    fn reset_captures(&mut self, captured: &Vec<i32>) {
+    fn reset_captures(&mut self, captured: &Vec<Tile>) {
         self.get_player_mut().captured -= captured.len() as u8;
-        self.get_opponent_mut().insert_mult(captured);
+        for tile in captured {
+            self.insert_tile(*tile);
+        }
     }
 
-    fn is_empty_neighbour(&self, index: i32) -> bool {
-        !self.empty_neighbours.contains(&index)
-            && !self.get_player().contains(index)
-            && !self.get_opponent().contains(index)
+    fn is_empty_neighbour(&self, tile: Tile) -> bool {
+        self.get_tile_value(tile) == 0
     }
 
-    pub fn update_empty_neighbours(&mut self, index: i32) {
+    pub fn update_empty_neighbours(&mut self, tile: Tile) {
         for direction in MOVES.iter() {
-            if direction.can_move_to(self.board_size, index, 1) {
-                let neighbour = direction.get_next_index(self.board_size, index);
+            if direction.can_move_to(self.board_size, tile, 1) {
+                let neighbour = direction.get_next_tile(self.board_size, tile);
                 if self.is_empty_neighbour(neighbour) {
                     self.empty_neighbours.insert(neighbour);
                 }
-                if direction.can_move_to(self.board_size, index, 2) {
-                    let neighbour = direction.get_index_mult(self.board_size, index, 2);
+                if direction.can_move_to(self.board_size, tile, 2) {
+                    let neighbour = direction.get_tile_mult(self.board_size, tile, 2);
                     if self.is_empty_neighbour(neighbour) {
                         self.empty_neighbours.insert(neighbour);
                     }
@@ -97,21 +124,21 @@ impl Game {
             }
         }
 
-        self.empty_neighbours.remove(&index);
+        self.empty_neighbours.remove(&tile);
     }
 
-    pub fn get_total_size(&self) -> i32 {
-        self.board_size * self.board_size
+    pub fn switch_player(&mut self, tile: Tile) {
+        self.get_player_mut().push_hit(tile);
+        let tmp_player = self.current_player;
+        self.current_player = self.opponent_player;
+        self.opponent_player = tmp_player;
     }
 
-    pub fn valid_index(&self, index: i32) -> bool {
-        -1 < index && index < self.get_total_size()
-    }
-
-    pub fn switch_player(&mut self, index: i32) {
-        // add hit history instead of last_played
-        self.get_player_mut().last_played = index;
-        self.current_player = if self.current_player == 1 { 2 } else { 1 };
+    fn reset_switch_player(&mut self) {
+        let tmp_player = self.current_player;
+        self.current_player = self.opponent_player;
+        self.opponent_player = tmp_player;
+        self.get_player_mut().remove_hit();
     }
 
     pub fn get_player(&self) -> &Player {
@@ -130,7 +157,7 @@ impl Game {
         }
     }
 
-    pub fn get_opponent_mut(&mut self) -> &mut Player {
+    fn get_opponent_mut(&mut self) -> &mut Player {
         if self.current_player == 1 {
             &mut self.player2
         } else {
@@ -138,7 +165,7 @@ impl Game {
         }
     }
 
-    pub fn get_player_mut(&mut self) -> &mut Player {
+    fn get_player_mut(&mut self) -> &mut Player {
         if self.current_player == 1 {
             &mut self.player1
         } else {
@@ -146,7 +173,7 @@ impl Game {
         }
     }
 
-    pub fn update_oponent_alignments(&mut self, alignments: Vec<Vec<i32>>) {
-        self.oponent_alignments = alignments;
+    pub fn update_opponent_alignments(&mut self, alignments: Vec<Vec<Tile>>) {
+        self.opponent_alignments = alignments;
     }
 }

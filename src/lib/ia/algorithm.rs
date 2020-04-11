@@ -1,8 +1,7 @@
 extern crate rand;
 use rand::Rng;
 
-use crate::lib::analyze::analyze_index;
-use crate::lib::game::Game;
+use crate::lib::game::{Game,Tile};
 use std::i32::{MAX, MIN};
 
 static mut analyzer_time: u128 = 0;
@@ -11,8 +10,7 @@ static mut update_time: u128 = 0;
 static mut reset_time: u128 = 0;
 use std::time::Instant;
 
-pub fn run(game: &mut Game) -> Vec<i32> {
-    let mut best_hits = vec![];
+pub fn run(game: &Game) -> Vec<Tile> {
     unsafe {
         analyzer_time = 0;
         analyzer_num = 0;
@@ -20,21 +18,15 @@ pub fn run(game: &mut Game) -> Vec<i32> {
         reset_time = 0;
     }
 
+    let mut best_hits = vec![];
     let empty_neighbours = game.empty_neighbours.clone();
-    for tile in &empty_neighbours {
-        let index = *tile;
 
+    for tile in empty_neighbours {
         unsafe {
             analyzer_num += 1;
         }
         let now = Instant::now();
-        let data = analyze_index(
-            index,
-            game.board_size,
-            &game.get_player(),
-            &game.get_opponent(),
-            &game.oponent_alignments,
-        );
+        let data = game.analyze(tile); 
         unsafe {
             analyzer_time += now.elapsed().as_nanos();
         }
@@ -48,21 +40,8 @@ pub fn run(game: &mut Game) -> Vec<i32> {
         } else if data.oponent_win {
             best_hits.push((tile, MIN));
         } else {
-            let old_alignment = game.oponent_alignments.clone();
-
-            let now = Instant::now();
-            game.update_game(*tile, data.alignments, &data.captured);
-            unsafe {
-                update_time += now.elapsed().as_nanos();
-            }
-
-            best_hits.push((tile, alphabeta(game, 2, MIN, MAX, false)));
-
-            let now = Instant::now();
-            game.reset_game(*tile, old_alignment, &data.captured, &empty_neighbours);
-            unsafe {
-                reset_time += now.elapsed().as_nanos();
-            }
+            let mut game = game.clone();
+            best_hits.push((tile, alphabeta(&mut game, 2, MIN, MAX, false)));
         }
     }
 
@@ -74,7 +53,7 @@ pub fn run(game: &mut Game) -> Vec<i32> {
     }
 
     best_hits.sort_by(|a, b| a.1.cmp(&b.1));
-    best_hits.iter().map(|v| *v.0).collect()
+    best_hits.iter().map(|v| v.0).collect()
 }
 
 fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_player: bool) -> i32 {
@@ -94,13 +73,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 analyzer_num += 1;
             }
             let now = Instant::now();
-            let data = analyze_index(
-                index,
-                game.board_size,
-                &game.get_player(),
-                &game.get_opponent(),
-                &game.oponent_alignments,
-            );
+            let data = game.analyze(index);
             unsafe {
                 analyzer_time += now.elapsed().as_nanos();
             }
@@ -114,7 +87,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
             } else if data.oponent_win {
                 return MIN + depth as i32 * 1000;
             } else {
-                let old_alignment = game.oponent_alignments.clone();
+                let old_alignment = game.opponent_alignments.clone();
                 let now = Instant::now();
                 game.update_game(index, data.alignments, &data.captured);
                 unsafe {
@@ -149,13 +122,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 analyzer_num += 1;
             }
             let now = Instant::now();
-            let data = analyze_index(
-                index,
-                game.board_size,
-                &game.get_player(),
-                &game.get_opponent(),
-                &game.oponent_alignments,
-            );
+            let data = game.analyze(index);
             unsafe {
                 analyzer_time += now.elapsed().as_nanos();
             }
@@ -169,7 +136,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
             } else if data.oponent_win {
                 return MAX - depth as i32 * 1000;
             } else {
-                let old_alignment = game.oponent_alignments.clone();
+                let old_alignment = game.opponent_alignments.clone();
 
                 let now = Instant::now();
                 game.update_game(index, data.alignments, &data.captured);
