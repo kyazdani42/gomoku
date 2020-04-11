@@ -28,126 +28,121 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
         oponent_win: false,
     };
 
-    let mut counter = 0;
+    let mut move_counter = 0;
     for moves in &STRAIGHT_MOVES {
-        let num_moves = min(4, moves[0].num_move_to(game.board_size, tile));
-        let num_moves_2 = min(4, moves[1].num_move_to(game.board_size, tile));
-
-        let mut aligned = vec![tile];
+        let mut counters = [1, 1];
+        let mut tile_values = [4, 4];
+        let mut aligned = [vec![], vec![]];
 
         for move_index in 0..2 {
-            if free_threes == 2 {
-                return AnalyzedTile {
-                    captured: vec![],
-                    alignments: vec![],
-                    double_free_three: true,
-                    win: false,
-                    oponent_win: false,
-                };
-            }
-
-            let mut align_ok = true;
-
             let direction = &moves[move_index];
-            let other_direction = if move_index == 0 {
-                &moves[1]
-            } else {
-                &moves[0]
-            };
-
-            let mut i = tile;
-
-            let mut capture_ok = true;
-            let mut captured = vec![];
-
-            let mut check_ft_sequence = if num_moves == 0 || num_moves_2 == 0 {
-                false
-            } else {
-                true
-            };
-
-            let mut nb_stones = 0;
-            let mut check_ft = 0;
-
-            for count in 1..=num_moves {
-                i = direction.get_next_tile(game.board_size, i);
-
-                let tile_value = game.get_tile_value(i);
-                if tile_value == game.current_player {
-                    if count == 1 || count == 2 {
-                        capture_ok = false
-                    } else if count == 3 && capture_ok {
-                        for capture in &captured {
-                            data.captured.push(*capture);
-                        }
-                    }
-
-                    if align_ok {
-                        if count == 1 {
-                            aligned.insert(0, i);
-                        } else {
-                            aligned.push(i);
-                        }
-                    }
-                    if check_ft_sequence && check_ft == 0 {
-                        nb_stones += 1;
-                    }
-                } else if tile_value == game.opponent_player {
-                    if (count == 1 || count == 2) && capture_ok {
-                        captured.push(i);
-                    }
-
-                    align_ok = false;
-                    if check_ft == 0 && check_ft_sequence {
-                        check_ft_sequence = false;
-                    }
-                } else {
-                    if count < 3 {
-                        capture_ok = false
-                    }
-                    if check_ft_sequence {
-                        match nb_stones {
-                            0 if count == 1 => {}
-                            1 => check_ft = 2,
-                            2 => check_ft = 1,
-                            _ => check_ft_sequence = false,
-                        }
-                    }
-                    align_ok = false;
+            let mut t = tile;
+            while counters[move_index] < 5 && direction.can_move_to(game.board_size, t, 1) {
+                t = direction.get_next_tile(t);
+                tile_values[move_index] = game.get_tile_value(t);
+                if tile_values[move_index] != game.current_player {
+                    break;
                 }
+                aligned[move_index].push(t);
+                counters[move_index] += 1;
             }
+        }
 
-            if check_ft != 0 && (move_index == 0 || check_ft == 1) {
-                let first_op_tile = other_direction.get_next_tile(game.board_size, tile);
-                let first_op = game.get_tile_value(first_op_tile);
-                if check_ft == 2 {
-                    let second_op_tile =
-                        other_direction.get_next_tile(game.board_size, first_op_tile);
-                    let second_op = game.get_tile_value(second_op_tile);
-                    if second_op == 0 && first_op == 1 {
+        for idx in 0..2 {
+            let tile_value = tile_values[idx];
+            let tile_value_reverse = if idx == 0 {
+                tile_values[1]
+            } else {
+                tile_values[0]
+            };
+            let counter = counters[idx];
+            let counter_reverse = if idx == 0 { counters[1] } else { counters[0] };
+            let direction = &moves[idx];
+
+            if counter == 1 && tile_value == game.opponent_player {
+                if !direction.can_move_to(game.board_size, tile, 3) {
+                    continue;
+                }
+                let t = direction.get_next_tile(tile);
+                let t2 = direction.get_tile_mult(tile, 2);
+                if game.get_tile_value(t2) == game.opponent_player {
+                    if game.get_tile_value(direction.get_tile_mult(tile, 3))
+                        == game.current_player
+                    {
+                        data.captured.push(t);
+                        data.captured.push(t2);
+                    }
+                }
+            } else if counter < 4
+                && tile_value_reverse == 0
+                && counter_reverse < 3
+                && tile_value == 0
+            {
+                if counter == 1 {
+                    if !direction.can_move_to(game.board_size, tile, 3) {
+                        continue;
+                    }
+
+                    let value2 = game.get_tile_value(direction.get_tile_mult(tile, 2));
+                    if value2 != game.current_player {
+                        continue;
+                    }
+
+                    let value3 = game.get_tile_value(direction.get_tile_mult(tile, 3));
+                    if counter_reverse == 1
+                        && value3 == game.current_player
+                        && direction.can_move_to(game.board_size, tile, 4)
+                    {
+                        let value4 = game.get_tile_value(direction.get_tile_mult(tile, 4));
+                        if value4 == 0 {
+                            free_threes += 1;
+                        }
+                    } else if value3 == 0 && counter_reverse == 2 {
                         free_threes += 1;
                     }
-                } else {
-                    if first_op == 0 {
+                } else if counter == 2 {
+                    if counter_reverse == 1 {
+                        if !direction.can_move_to(game.board_size, tile, 4) {
+                            continue;
+                        }
+
+                        if game.get_tile_value(direction.get_tile_mult(tile, 3)) == 1
+                            && game.get_tile_value(direction.get_tile_mult(tile, 4)) == 0
+                        {
+                            free_threes += 1;
+                        }
+                    } else if idx == 0 {
                         free_threes += 1;
                     }
+                } else if counter_reverse == 1 {
+                    free_threes += 1;
                 }
             }
         }
 
-        if aligned.len() > 4 {
-            let mut all_moves = STRAIGHT_MOVES.to_vec();
-            all_moves.remove(counter);
+        if free_threes > 1 {
+            return AnalyzedTile {
+                captured: vec![],
+                alignments: vec![],
+                double_free_three: true,
+                win: false,
+                oponent_win: false,
+            };
+        }
 
-            let capturable = get_capturable_indexes(
-                &get_indexes_from_alignment(&aligned),
-                game,
-                &all_moves,
-            );
+        if aligned[0].len() + aligned[1].len() > 3 {
+            let mut all_moves = STRAIGHT_MOVES.to_vec();
+            all_moves.remove(move_counter);
+
+            aligned[1].reverse();
+            let aligned = aligned.to_vec().join(&tile);
+
+            let idxs = get_indexes_from_alignment(&aligned);
+            let capturable = get_capturable_indexes(&idxs, game, &all_moves);
             data.alignments.push(capturable);
         }
 
-        counter += 1;
+        move_counter += 1;
     }
 
     if game.get_player().captured + data.captured.len() as u8 > 9 {
@@ -207,19 +202,21 @@ fn get_capturable_indexes(
             let first_move = &moves[0];
             let second_move = &moves[1];
             let tile = *tile;
-            if !first_move.can_move_to(game.board_size, tile, 1) || !second_move.can_move_to(game.board_size, tile, 1) {
+            if !first_move.can_move_to(game.board_size, tile, 1)
+                || !second_move.can_move_to(game.board_size, tile, 1)
+            {
                 continue;
             }
 
-            let first_value = game.get_tile_value(first_move.get_next_tile(game.board_size, tile));
-            let second_value = game.get_tile_value(second_move.get_next_tile(game.board_size, tile));
+            let first_value = game.get_tile_value(first_move.get_next_tile(tile));
+            let second_value = game.get_tile_value(second_move.get_next_tile(tile));
 
             if first_value == 1 && second_value != 1 {
                 if !first_move.can_move_to(game.board_size, tile, 2) {
                     continue;
                 }
 
-                let edge_value = game.get_tile_value(first_move.get_tile_mult(game.board_size, tile, 2));
+                let edge_value = game.get_tile_value(first_move.get_tile_mult(tile, 2));
                 if edge_value == 1 {
                     continue;
                 }
@@ -232,8 +229,7 @@ fn get_capturable_indexes(
                     continue;
                 }
 
-                let edge_value =
-                    game.get_tile_value(second_move.get_tile_mult(game.board_size, tile, 2));
+                let edge_value = game.get_tile_value(second_move.get_tile_mult(tile, 2));
                 if edge_value == 1 {
                     continue;
                 }
@@ -256,12 +252,14 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
             let first_move = &moves[0];
             let second_move = &moves[1];
             let tile = *tile;
-            if !first_move.can_move_to(game.board_size, tile, 1) || !second_move.can_move_to(game.board_size, tile, 1) {
+            if !first_move.can_move_to(game.board_size, tile, 1)
+                || !second_move.can_move_to(game.board_size, tile, 1)
+            {
                 continue;
             }
 
-            let first_move_tile = first_move.get_next_tile(game.board_size, tile);
-            let second_move_tile = second_move.get_next_tile(game.board_size, tile);
+            let first_move_tile = first_move.get_next_tile(tile);
+            let second_move_tile = second_move.get_next_tile(tile);
 
             let first_value = game.get_tile_value(first_move_tile);
             let second_value = game.get_tile_value(second_move_tile);
@@ -271,7 +269,7 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
                     continue;
                 }
 
-                let edge_value_tile = first_move.get_tile_mult(game.board_size, tile, 2);
+                let edge_value_tile = first_move.get_tile_mult(tile, 2);
 
                 let edge_value = game.get_tile_value(edge_value_tile);
                 if edge_value == 1 {
@@ -296,7 +294,7 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
                     continue;
                 }
 
-                let edge_value_tile = second_move.get_tile_mult(game.board_size, tile, 2);
+                let edge_value_tile = second_move.get_tile_mult(tile, 2);
                 let edge_value = game.get_tile_value(edge_value_tile);
                 if edge_value == 1 {
                     continue;

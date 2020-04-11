@@ -111,12 +111,12 @@ impl Game {
     pub fn update_empty_neighbours(&mut self, tile: Tile) {
         for direction in MOVES.iter() {
             if direction.can_move_to(self.board_size, tile, 1) {
-                let neighbour = direction.get_next_tile(self.board_size, tile);
+                let neighbour = direction.get_next_tile(tile);
                 if self.is_empty_neighbour(neighbour) {
                     self.empty_neighbours.insert(neighbour);
                 }
                 if direction.can_move_to(self.board_size, tile, 2) {
-                    let neighbour = direction.get_tile_mult(self.board_size, tile, 2);
+                    let neighbour = direction.get_tile_mult(tile, 2);
                     if self.is_empty_neighbour(neighbour) {
                         self.empty_neighbours.insert(neighbour);
                     }

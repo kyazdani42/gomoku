@@ -32,17 +32,17 @@ impl Move {
     pub fn num_move_to(&self, board_size: i32, tile: Tile) -> i32 {
         match self {
             Move::Left => tile.1,
-            Move::Right => board_size - tile.1,
+            Move::Right => (board_size - 1) - tile.1,
             Move::Top => tile.0,
-            Move::Bottom => board_size - tile.0,
+            Move::Bottom => (board_size - 1) - tile.0,
             Move::TopLeft => min(tile.0, tile.1),
-            Move::TopRight => min(tile.0, board_size - tile.1),
-            Move::BottomLeft => min(board_size - tile.0, tile.1),
-            Move::BottomRight => min(board_size - tile.0, board_size - tile.1),
+            Move::TopRight => min(tile.0, (board_size - 1) - tile.1),
+            Move::BottomLeft => min((board_size - 1) - tile.0, tile.1),
+            Move::BottomRight => min((board_size - 1) - tile.0, (board_size - 1) - tile.1),
         }
     }
 
-    pub fn get_next_tile(&self, board_size: i32, tile: Tile) -> Tile {
+    pub fn get_next_tile(&self, tile: Tile) -> Tile {
         match self {
             Move::Left => (tile.0, tile.1 - 1),
             Move::Right => (tile.0, tile.1 + 1),
@@ -55,7 +55,7 @@ impl Move {
         }
     }
 
-    pub fn get_tile_mult(&self, board_size: i32, tile: Tile, depth: i32) -> Tile {
+    pub fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
         match self {
             Move::Left => (tile.0, tile.1 - depth),
             Move::Right => (tile.0, tile.1 + depth),
