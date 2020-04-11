@@ -5,9 +5,7 @@ use hyper::header::{ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE};
 use hyper::rt::{lazy, Future};
 use hyper::{Body, Error, Method, Request, Response, StatusCode};
 
-use serde::{Deserialize, Serialize};
-
-use crate::game::GameState;
+use super::lib::State;
 
 static INTERNAL_SERVER_ERROR: &[u8] = b"Internal Server Error";
 static NOTFOUND: &[u8] = b"Not Found";
@@ -15,7 +13,7 @@ static BADREQUEST: &[u8] = b"Bad Request";
 
 type FutureResponse = Box<dyn Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
-pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureResponse {
+pub fn router(req: Request<Body>, state: &Arc<Mutex<State>>) -> FutureResponse {
     let response = match req.method() {
         &Method::GET => get(req, state),
         _ => Ok(Response::builder()
@@ -27,7 +25,7 @@ pub fn router(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> FutureRespon
     Box::new(lazy(|| response))
 }
 
-fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Body>, Error> {
+fn get(req: Request<Body>, state: &Arc<Mutex<State>>) -> Result<Response<Body>, Error> {
     let uri = req.uri();
     match uri.path() {
         "/init" => match handle_initialization(uri.query(), state) {
@@ -54,18 +52,6 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
                 .body(BADREQUEST.into())
                 .unwrap()),
         },
-        "/play_ia" => match play_ia(state) {
-            Some(val) => Ok(Response::builder()
-                .header(CONTENT_TYPE, "application/json")
-                .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-                .status(StatusCode::OK)
-                .body(Body::from(val))
-                .unwrap()),
-            None => Ok(Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(INTERNAL_SERVER_ERROR.into())
-                .unwrap()),
-        },
         _ => match get_static_asset(uri.path()) {
             Ok(val) => Ok(Response::builder()
                 .status(StatusCode::OK)
@@ -79,24 +65,19 @@ fn get(req: Request<Body>, state: &Arc<Mutex<GameState>>) -> Result<Response<Bod
     }
 }
 
-fn play(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
+fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
     let params = get_params(params)?;
     let index = find_param(&params, "index")?;
     let index = parse_param(&index)?;
 
     let mut state = state.lock().unwrap();
-    state.play(index);
+    state.run(index as i32);
+    state.run_ia();
 
     get_response_data(&state)
 }
 
-fn play_ia(state: &Arc<Mutex<GameState>>) -> Option<String> {
-    let mut state = state.lock().unwrap();
-    state.play_ia();
-    get_response_data(&state)
-}
-
-fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) -> Option<String> {
+fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
     let params = get_params(params)?;
     let size_param = find_param(&params, "size")?;
 
@@ -113,40 +94,15 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<GameState>>) ->
     }
 
     let mut state = state.lock().unwrap();
-    let player = if ia == 1 { 2 } else { 1 };
-    state.init(board_size, player, ia);
+
+    state.initialize(board_size as u8, ia);
+    state.run_ia();
 
     get_response_data(&state)
 }
 
-#[derive(Serialize, Deserialize)]
-struct ResponseData {
-    board: Vec<u8>,
-    player: u8,
-    p1_captured: u8,
-    p2_captured: u8,
-    winner: u8,
-    ia: u8,
-    time: u128,
-}
-
-fn get_response_data(state: &GameState) -> Option<String> {
-    let mut board = vec![0; state.board_size * state.board_size];
-
-    for (key, value) in &state.placed {
-        board[*key] = *value;
-    }
-
-    let data = ResponseData {
-        board,
-        player: state.player,
-        p1_captured: state.p1_captured,
-        p2_captured: state.p2_captured,
-        winner: state.winner,
-        time: state.time,
-        ia: state.ia,
-    };
-    match serde_json::to_string(&data) {
+fn get_response_data(state: &State) -> Option<String> {
+    match serde_json::to_string(&state.get_data()) {
         Ok(json) => Some(json),
         Err(_) => None,
     }
@@ -161,15 +117,14 @@ fn parse_param(param: &str) -> Option<usize> {
 
 fn get_params(params: Option<&str>) -> Option<Vec<Vec<String>>> {
     let params = params?
-        .split("&")
-        .into_iter()
-        .map(|p| p.split("=").map(|s| s.to_owned()).collect::<Vec<String>>())
+        .split('&')
+        .map(|p| p.split('=').map(|s| s.to_owned()).collect::<Vec<String>>())
         .collect::<Vec<Vec<String>>>();
 
     Some(params)
 }
 
-fn find_param(params: &Vec<Vec<String>>, name: &str) -> Option<String> {
+fn find_param(params: &[Vec<String>], name: &str) -> Option<String> {
     let param = params.iter().find(|x| x[0] == name)?;
     if param.len() != 2 {
         return None;
@@ -185,7 +140,7 @@ fn get_static_asset(path: &str) -> Result<Vec<u8>, std::io::Error> {
         .map(|entry| entry.unwrap())
         .find(|entry| entry.file_name().into_string().unwrap() == path[1..])
         .map(|entry| format!("{:?}", entry.path()))
-        .unwrap_or(DEFAULT_FILE.to_owned());
+        .unwrap_or_else(|| DEFAULT_FILE.to_owned());
     entry.retain(|c| c != '"');
 
     Ok(fs::read(entry)?)
