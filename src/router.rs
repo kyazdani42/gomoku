@@ -71,7 +71,10 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
     let index = parse_param(&index)?;
 
     let mut state = state.lock().unwrap();
-    state.run(index as i32);
+    let board_size = state.get_board_size() as i32;
+    let index = index as i32;
+    let idx = (index / board_size, index % board_size);
+    state.run(idx);
     state.run_ia();
 
     get_response_data(&state)

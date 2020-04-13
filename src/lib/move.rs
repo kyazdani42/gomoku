@@ -1,151 +1,160 @@
-use std::cmp::min;
+use super::game::Tile;
 
-#[derive(Clone)]
-pub enum Move {
-    Left,
-    Right,
-    Top,
-    Bottom,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
+pub trait Move {
+    fn is_ok(&self, tile: &Tile) -> bool;
+    fn get_next_tile(&self, tile: &Tile) -> Tile;
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile;
 }
 
-impl Move {
-    /// Check if we can move from `index` to a direction `depth` times
-    pub fn can_move_to(&self, board_size: i32, index: i32, depth: i32) -> bool {
-        match self {
-            Move::Left => index - depth > -1 && (index - depth) / board_size == index / board_size,
-            Move::Right => (index + depth) / board_size == index / board_size,
-            Move::Top => index - depth * board_size > -1,
-            Move::Bottom => index + depth * board_size < board_size * board_size,
-            Move::TopLeft => {
-                Move::Left.can_move_to(board_size, index, depth)
-                    && Move::Top.can_move_to(board_size, index, depth)
-            }
-            Move::TopRight => {
-                Move::Right.can_move_to(board_size, index, depth)
-                    && Move::Top.can_move_to(board_size, index, depth)
-            }
-            Move::BottomLeft => {
-                Move::Left.can_move_to(board_size, index, depth)
-                    && Move::Bottom.can_move_to(board_size, index, depth)
-            }
-            Move::BottomRight => {
-                Move::Right.can_move_to(board_size, index, depth)
-                    && Move::Bottom.can_move_to(board_size, index, depth)
-            }
-        }
+struct Left {}
+impl Move for Left {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.1 > -1
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0, tile.1 - 1)
     }
 
-    pub fn num_move_to(&self, board_size: i32, index: i32) -> i32 {
-        match self {
-            Move::Left => index % board_size,
-            Move::Right => board_size - index % board_size,
-            Move::Top => index / board_size,
-            Move::Bottom => board_size - index / board_size,
-            Move::TopLeft => min(index / board_size, index % board_size),
-            Move::TopRight => min(index / board_size, board_size - index % board_size),
-            Move::BottomLeft => min(board_size - index / board_size, index % board_size),
-            Move::BottomRight => min(
-                board_size - index / board_size,
-                board_size - index % board_size,
-            ),
-        }
-    }
-
-    pub fn get_next_index(&self, board_size: i32, index: i32) -> i32 {
-        match self {
-            Move::Left => index - 1,
-            Move::Right => index + 1,
-            Move::Top => index - board_size,
-            Move::Bottom => index + board_size,
-            Move::TopLeft => index - (board_size + 1),
-            Move::TopRight => index - (board_size - 1),
-            Move::BottomLeft => index + (board_size - 1),
-            Move::BottomRight => index + (board_size + 1),
-        }
-    }
-
-    pub fn get_index_mult(&self, board_size: i32, index: i32, times: i32) -> i32 {
-         match self {
-            Move::Left => index - times,
-            Move::Right => index + times,
-            Move::Top => index - (board_size * times),
-            Move::Bottom => index + (board_size * times),
-            Move::TopLeft => index - ((board_size + 1) * times),
-            Move::TopRight => index - ((board_size - 1) * times),
-            Move::BottomLeft => index + ((board_size - 1) * times),
-            Move::BottomRight => index + ((board_size + 1) * times),
-        }       
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0, tile.1 - depth)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::Move;
-
-    #[test]
-    fn can_move_to_left_true() {
-        let index = 5;
-        let board_size = 10;
-        assert_eq!(Move::Left.can_move_to(board_size, index, 5), true);
+struct Right {
+    board_size: i32,
+}
+impl Move for Right {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.1 < self.board_size
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0, tile.1 + 1)
     }
 
-    #[test]
-    fn can_move_to_left_false() {
-        let index = 4;
-        let board_size = 10;
-        assert_eq!(Move::Left.can_move_to(board_size, index, 5), false);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0, tile.1 + depth)
+    }
+}
+
+struct Top {}
+impl Move for Top {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 > -1
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 - 1, tile.1)
     }
 
-    #[test]
-    fn can_move_to_right_true() {
-        let index = 5;
-        let board_size = 10;
-        assert_eq!(Move::Right.can_move_to(board_size, index, 4), true);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 - depth, tile.1)
+    }
+}
+
+struct Bottom {
+    board_size: i32,
+}
+impl Move for Bottom {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 < self.board_size
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 + 1, tile.1)
     }
 
-    #[test]
-    fn can_move_to_right_false() {
-        let index = 5;
-        let board_size = 10;
-        assert_eq!(Move::Right.can_move_to(board_size, index, 5), false);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 + depth, tile.1)
+    }
+}
+
+struct TopLeft {}
+impl Move for TopLeft {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 > -1 && tile.1 > -1
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 - 1, tile.1 - 1)
     }
 
-    #[test]
-    fn can_move_to_right_end_false() {
-        let index = 99;
-        let board_size = 10;
-        assert_eq!(Move::Right.can_move_to(board_size, index, 1), false);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 - depth, tile.1 - depth)
+    }
+}
+
+struct TopRight {
+    board_size: i32,
+}
+impl Move for TopRight {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 > -1 && tile.1 < self.board_size
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 - 1, tile.1 + 1)
     }
 
-    #[test]
-    fn can_move_to_top_true() {
-        let index = 24;
-        let board_size = 5;
-        assert_eq!(Move::Top.can_move_to(board_size, index, 4), true);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 - depth, tile.1 + depth)
+    }
+}
+
+struct BottomLeft {
+    board_size: i32,
+}
+impl Move for BottomLeft {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 < self.board_size && tile.1 > -1
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 + 1, tile.1 - 1)
     }
 
-    #[test]
-    fn can_move_to_top_false() {
-        let index = 19;
-        let board_size = 5;
-        assert_eq!(Move::Top.can_move_to(board_size, index, 4), false);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 + depth, tile.1 - depth)
+    }
+}
+
+struct BottomRight {
+    board_size: i32,
+}
+impl Move for BottomRight {
+    fn is_ok(&self, tile: &Tile) -> bool {
+        tile.0 < self.board_size && tile.1 < self.board_size
+    }
+    fn get_next_tile(&self, tile: &Tile) -> Tile {
+        (tile.0 + 1, tile.1 + 1)
     }
 
-    #[test]
-    fn can_move_to_bottom_true() {
-        let index = 0;
-        let board_size = 5;
-        assert_eq!(Move::Bottom.can_move_to(board_size, index, 4), true);
+    fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
+        (tile.0 + depth, tile.1 + depth)
     }
+}
 
-    #[test]
-    fn can_move_to_bottom_false() {
-        let index = 0;
-        let board_size = 5;
-        assert_eq!(Move::Bottom.can_move_to(board_size, index, 5), false);
+pub struct Moves {
+    pub all_moves: Vec<Box<dyn Move + Send>>,
+    pub straight_moves: Vec<Vec<Box<dyn Move + Send>>>,
+}
+
+impl Moves {
+    pub fn new(board_size: i32) -> Self {
+        Self {
+            all_moves: vec![
+                Box::new(Left {}),
+                Box::new(Right { board_size }),
+                Box::new(Top {}),
+                Box::new(Bottom { board_size }),
+                Box::new(TopLeft {}),
+                Box::new(TopRight { board_size }),
+                Box::new(BottomLeft { board_size }),
+                Box::new(BottomRight { board_size }),
+            ],
+            straight_moves: vec![
+                vec![Box::new(Left {}), Box::new(Right { board_size })],
+                vec![Box::new(Top {}), Box::new(Bottom { board_size })],
+                vec![Box::new(TopLeft {}), Box::new(BottomRight { board_size })],
+                vec![
+                    Box::new(TopRight { board_size }),
+                    Box::new(BottomLeft { board_size }),
+                ],
+            ],
+        }
     }
 }
