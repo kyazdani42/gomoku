@@ -27,8 +27,8 @@ impl State {
         State {
             ia: 0,
             time: 0,
-            game: Game::new(19),
             winner: 0,
+            game: Game::new(19),
             best_hits: vec![(0, 0)],
         }
     }
@@ -37,8 +37,8 @@ impl State {
         *self = State {
             ia,
             time: 0,
-            game: Game::new(board_size as i32),
             winner: 0,
+            game: Game::new(board_size as i32),
             best_hits: vec![(board_size as i32 / 2, board_size as i32 / 2)],
         };
     }
@@ -61,7 +61,7 @@ impl State {
 
         let index_data = self.game.analyze(&tile);
         self.game.insert_tile(tile_ref);
-        self.game.update_opponent_alignments(index_data.alignments);
+        self.game.update_opponent_alignments(&index_data.alignments);
         self.game.update_captures(&index_data.captured);
         self.game.update_empty_neighbours(tile_ref);
 
@@ -71,7 +71,7 @@ impl State {
             self.winner = self.game.opponent_player
         } else {
             self.game.switch_player(tile_ref);
-            self.best_hits = ia::run(&mut self.game);
+            self.best_hits = ia::run(self.game.clone());
             self.update_forbidden();
         }
     }
