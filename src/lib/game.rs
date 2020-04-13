@@ -3,7 +3,7 @@ use super::player::Player;
 use super::r#move::Moves;
 use std::cmp::{max, min};
 use std::collections::HashSet;
-use std::rc::Rc;
+use std::sync::{Arc,Mutex};
 
 pub type Tile = (i32, i32);
 
@@ -17,7 +17,7 @@ pub struct Game {
     pub board: Vec<Vec<u8>>,
     pub empty_neighbours: HashSet<Tile>,
     pub opponent_alignments: Vec<Vec<Tile>>,
-    pub moves: Rc<Moves>,
+    pub moves: Arc<Mutex<Moves>>,
 }
 
 impl Game {
@@ -29,7 +29,7 @@ impl Game {
             player2: Player::new(),
             empty_neighbours: HashSet::new(),
             opponent_alignments: vec![],
-            moves: Rc::new(Moves::new(board_size)),
+            moves: Arc::new(Mutex::new(Moves::new(board_size))),
             board: (0..board_size)
                 .map(|_| (0..board_size).map(|_| 0).collect::<Vec<u8>>())
                 .collect(),
@@ -136,14 +136,6 @@ impl Game {
             &self.player2
         } else {
             &self.player1
-        }
-    }
-
-    fn get_opponent_mut(&mut self) -> &mut Player {
-        if self.current_player == 1 {
-            &mut self.player2
-        } else {
-            &mut self.player1
         }
     }
 

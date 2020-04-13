@@ -1,4 +1,4 @@
-use super::r#move::Move;
+use super::r#move::{Move,Moves};
 use super::game::{Game, Tile};
 use std::collections::HashMap;
 
@@ -21,7 +21,8 @@ pub fn analyze_index(tile: &Tile, game: &Game) -> AnalyzedTile {
     };
 
     let mut move_counter = 0;
-    for moves in &game.moves.straight_moves {
+    let game_moves = &game.moves.lock().unwrap();
+    for moves in &game_moves.straight_moves {
         let mut counters = [1, 1];
         let mut tile_values = [4, 4];
         let mut aligned = [vec![], vec![]];
@@ -128,11 +129,11 @@ pub fn analyze_index(tile: &Tile, game: &Game) -> AnalyzedTile {
 
         if aligned[0].len() + aligned[1].len() > 3 {
             let mut all_moves = vec![];
-            for i in 0..game.moves.straight_moves.len() {
+            for i in 0..game_moves.straight_moves.len() {
                 if i == move_counter {
                     continue;
                 }
-                all_moves.push(&game.moves.straight_moves[i]);
+                all_moves.push(&game_moves.straight_moves[i]);
             }
 
             aligned[1].reverse();
@@ -162,7 +163,7 @@ pub fn analyze_index(tile: &Tile, game: &Game) -> AnalyzedTile {
     } else {
         let num_alignments = data.alignments.len();
         if num_alignments > 1 || (num_alignments > 0 && data.alignments[0].len() == 0) {
-            let catchers = get_catcher_indexes(game);
+            let catchers = get_catcher_indexes(game, game_moves);
 
             let max_captures = catchers.iter().fold(0, |max_c, catcher| {
                 if max_c > *catcher.1 {
@@ -194,7 +195,7 @@ fn get_indexes_from_alignment(alignment: &Vec<Tile>) -> Vec<Tile> {
 fn get_capturable_indexes(
     aligned: &Vec<Tile>,
     game: &Game,
-    all_moves: &Vec<&Vec<Box<dyn Move>>>,
+    all_moves: &Vec<&Vec<Box<dyn Move + Send>>>,
 ) -> Vec<Tile> {
     let mut capturable = vec![];
 
@@ -249,11 +250,11 @@ fn get_capturable_indexes(
     capturable
 }
 
-fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
+fn get_catcher_indexes(game: &Game, game_moves: &std::sync::MutexGuard<Moves>) -> HashMap<Tile, i32> {
     let mut catchers = HashMap::new();
 
     for tile in &game.get_player().last_hits {
-        for moves in &game.moves.straight_moves {
+        for moves in &game_moves.straight_moves {
             let first_move = &moves[0];
             let second_move = &moves[1];
 

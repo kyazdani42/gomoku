@@ -22,8 +22,8 @@ pub fn run(game: Game) -> Vec<Tile> {
     let mut best_hits = vec![];
     let empty_neighbours = game.empty_neighbours.clone();
 
-    let mut alpha = MAX;
-    let mut beta = MIN;
+    let mut alpha = MIN;
+    let mut beta = MAX;
     for tile in empty_neighbours {
         unsafe {
             analyzer_num += 1;
@@ -44,6 +44,7 @@ pub fn run(game: Game) -> Vec<Tile> {
             best_hits.push((tile, MIN));
         } else {
             let mut game = game.clone();
+            game.update_game(&tile, &data.alignments, &data.captured);
             best_hits.push((tile, alphabeta(&mut game, 9, &mut alpha, &mut beta, false)));
         }
     }
@@ -56,6 +57,9 @@ pub fn run(game: Game) -> Vec<Tile> {
     }
 
     best_hits.sort_by(|a, b| a.1.cmp(&b.1));
+    for v in &best_hits {
+        println!("{} {}, h: {}", (v.0).0, (v.0).1, v.1);
+    }
     best_hits.iter().map(|v| v.0).collect()
 }
 
@@ -69,7 +73,7 @@ fn alphabeta(
     if depth == 0 {
         // return 1;
         // return rand::thread_rng().gen();
-        return game.get_opponent().captured as i32
+        return game.get_player().captured as i32
     }
 
     let empty_neighbours = game.empty_neighbours.clone();
