@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Board } from './Board';
 import { GameSelection } from './GameSelection';
-import { Info } from "./Info";
+import { Info } from './Info';
 
 export const Gomoku = () => {
   const [state, setState] = useState(null);
@@ -27,8 +27,9 @@ export const Gomoku = () => {
         board={state.board}
         player={state.player}
         onReset={() => setState(null)}
-        onClick={payload => {
-          if (state.board[payload] === 0) {
+        onClick={(payload) => {
+          let tile = state.board[payload];
+          if (tile === 0 || tile === 5) {
             const newBoard = state.board.slice();
             newBoard[payload] = state.player;
             setState({ ...state, board: newBoard });
@@ -67,7 +68,7 @@ const handlePlay = async (index, setState, setError) => {
   }
 };
 
-const getPlayUrl = index => `${URL}/play?index=${index}`;
+const getPlayUrl = (index) => `${URL}/play?index=${index}`;
 
 const getPlayIa = () => `${URL}/play_ia`;
 

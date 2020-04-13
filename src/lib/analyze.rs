@@ -18,7 +18,7 @@ const STRAIGHT_MOVES: [[Move; 2]; 4] = [
     [Move::TopRight, Move::BottomLeft],
 ];
 
-pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
+pub fn analyze_index(tile: &Tile, game: &Game) -> AnalyzedTile {
     let mut free_threes: u8 = 0;
     let mut data = AnalyzedTile {
         captured: vec![],
@@ -36,10 +36,10 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
 
         for move_index in 0..2 {
             let direction = &moves[move_index];
-            let mut t = tile;
-            while counters[move_index] < 5 && direction.can_move_to(game.board_size, t, 1) {
-                t = direction.get_next_tile(t);
-                tile_values[move_index] = game.get_tile_value(t);
+            let mut t = *tile;
+            while counters[move_index] < 5 && direction.can_move_to(game.board_size, &t, 1) {
+                t = direction.get_next_tile(&t);
+                tile_values[move_index] = game.get_tile_value(&t);
                 if tile_values[move_index] != game.current_player {
                     break;
                 }
@@ -65,9 +65,8 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
                 }
                 let t = direction.get_next_tile(tile);
                 let t2 = direction.get_tile_mult(tile, 2);
-                if game.get_tile_value(t2) == game.opponent_player {
-                    if game.get_tile_value(direction.get_tile_mult(tile, 3))
-                        == game.current_player
+                if game.get_tile_value(&t2) == game.opponent_player {
+                    if game.get_tile_value(&direction.get_tile_mult(&tile, 3)) == game.current_player
                     {
                         data.captured.push(t);
                         data.captured.push(t2);
@@ -83,17 +82,17 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
                         continue;
                     }
 
-                    let value2 = game.get_tile_value(direction.get_tile_mult(tile, 2));
+                    let value2 = game.get_tile_value(&direction.get_tile_mult(&tile, 2));
                     if value2 != game.current_player {
                         continue;
                     }
 
-                    let value3 = game.get_tile_value(direction.get_tile_mult(tile, 3));
+                    let value3 = game.get_tile_value(&direction.get_tile_mult(&tile, 3));
                     if counter_reverse == 1
                         && value3 == game.current_player
                         && direction.can_move_to(game.board_size, tile, 4)
                     {
-                        let value4 = game.get_tile_value(direction.get_tile_mult(tile, 4));
+                        let value4 = game.get_tile_value(&direction.get_tile_mult(&tile, 4));
                         if value4 == 0 {
                             free_threes += 1;
                         }
@@ -106,8 +105,9 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
                             continue;
                         }
 
-                        if game.get_tile_value(direction.get_tile_mult(tile, 3)) == 1
-                            && game.get_tile_value(direction.get_tile_mult(tile, 4)) == 0
+                        if game.get_tile_value(&direction.get_tile_mult(&tile, 3))
+                            == game.current_player
+                            && game.get_tile_value(&direction.get_tile_mult(&tile, 4)) == 0
                         {
                             free_threes += 1;
                         }
@@ -135,7 +135,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
             all_moves.remove(move_counter);
 
             aligned[1].reverse();
-            let aligned = aligned.to_vec().join(&tile);
+            let aligned = aligned.to_vec().join(tile);
 
             let idxs = get_indexes_from_alignment(&aligned);
             let capturable = get_capturable_indexes(&idxs, game, &all_moves);
@@ -201,41 +201,40 @@ fn get_capturable_indexes(
         for moves in all_moves {
             let first_move = &moves[0];
             let second_move = &moves[1];
-            let tile = *tile;
             if !first_move.can_move_to(game.board_size, tile, 1)
                 || !second_move.can_move_to(game.board_size, tile, 1)
             {
                 continue;
             }
 
-            let first_value = game.get_tile_value(first_move.get_next_tile(tile));
-            let second_value = game.get_tile_value(second_move.get_next_tile(tile));
+            let first_value = game.get_tile_value(&first_move.get_next_tile(tile));
+            let second_value = game.get_tile_value(&second_move.get_next_tile(tile));
 
             if first_value == 1 && second_value != 1 {
                 if !first_move.can_move_to(game.board_size, tile, 2) {
                     continue;
                 }
 
-                let edge_value = game.get_tile_value(first_move.get_tile_mult(tile, 2));
+                let edge_value = game.get_tile_value(&first_move.get_tile_mult(tile, 2));
                 if edge_value == 1 {
                     continue;
                 }
 
                 if edge_value != second_value {
-                    capturable.push(tile);
+                    capturable.push(*tile);
                 }
             } else if second_value == 1 && first_value != 1 {
                 if !second_move.can_move_to(game.board_size, tile, 2) {
                     continue;
                 }
 
-                let edge_value = game.get_tile_value(second_move.get_tile_mult(tile, 2));
+                let edge_value = game.get_tile_value(&second_move.get_tile_mult(tile, 2));
                 if edge_value == 1 {
                     continue;
                 }
 
                 if edge_value != first_value {
-                    capturable.push(tile);
+                    capturable.push(*tile);
                 }
             }
         }
@@ -251,7 +250,6 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
         for moves in &STRAIGHT_MOVES {
             let first_move = &moves[0];
             let second_move = &moves[1];
-            let tile = *tile;
             if !first_move.can_move_to(game.board_size, tile, 1)
                 || !second_move.can_move_to(game.board_size, tile, 1)
             {
@@ -261,8 +259,8 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
             let first_move_tile = first_move.get_next_tile(tile);
             let second_move_tile = second_move.get_next_tile(tile);
 
-            let first_value = game.get_tile_value(first_move_tile);
-            let second_value = game.get_tile_value(second_move_tile);
+            let first_value = game.get_tile_value(&first_move_tile);
+            let second_value = game.get_tile_value(&second_move_tile);
 
             if first_value == 1 && second_value != 1 {
                 if !first_move.can_move_to(game.board_size, tile, 2) {
@@ -271,7 +269,7 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
 
                 let edge_value_tile = first_move.get_tile_mult(tile, 2);
 
-                let edge_value = game.get_tile_value(edge_value_tile);
+                let edge_value = game.get_tile_value(&edge_value_tile);
                 if edge_value == 1 {
                     continue;
                 }
@@ -295,7 +293,7 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
                 }
 
                 let edge_value_tile = second_move.get_tile_mult(tile, 2);
-                let edge_value = game.get_tile_value(edge_value_tile);
+                let edge_value = game.get_tile_value(&edge_value_tile);
                 if edge_value == 1 {
                     continue;
                 }

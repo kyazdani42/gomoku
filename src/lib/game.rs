@@ -44,7 +44,7 @@ impl Game {
         }
     }
 
-    pub fn update_game(&mut self, tile: Tile, alignments: Vec<Vec<Tile>>, captured: &Vec<Tile>) {
+    pub fn update_game(&mut self, tile: &Tile, alignments: Vec<Vec<Tile>>, captured: &Vec<Tile>) {
         self.insert_tile(tile);
         self.update_opponent_alignments(alignments);
         self.update_captures(captured);
@@ -54,7 +54,7 @@ impl Game {
 
     pub fn reset_game(
         &mut self,
-        tile: Tile,
+        tile: &Tile,
         alignments: Vec<Vec<Tile>>,
         captured: &Vec<Tile>,
         empty_neighbours: &HashSet<Tile>,
@@ -66,58 +66,58 @@ impl Game {
         self.empty_neighbours = empty_neighbours.clone();
     }
 
-    pub fn analyze(&self, tile: Tile) -> AnalyzedTile {
+    pub fn analyze(&self, tile: &Tile) -> AnalyzedTile {
         analyze_index(tile, self)
     }
 
-    pub fn insert_tile(&mut self, tile: Tile) {
+    pub fn insert_tile(&mut self, tile: &Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
     }
 
-    pub fn insert_forbidden(&mut self, tile: Tile) {
+    pub fn insert_forbidden(&mut self, tile: &Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 3;
     }
 
-    pub fn remove_tile(&mut self, tile: Tile) {
+    pub fn remove_tile(&mut self, tile: &Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 0;
     }
 
-    pub fn get_tile_value(&self, tile: Tile) -> u8 {
+    pub fn get_tile_value(&self, tile: &Tile) -> u8 {
         self.board[tile.0 as usize][tile.1 as usize]
     }
 
-    pub fn validate_tile(&self, tile: Tile) -> bool {
+    pub fn validate_tile(&self, tile: &Tile) -> bool {
         -1 < tile.0 && tile.0 < self.board_size && -1 < tile.1 && tile.1 < self.board_size
     }
 
     pub fn update_captures(&mut self, captured: &Vec<Tile>) {
         self.get_player_mut().captured += captured.len() as u8;
         for tile in captured {
-            self.remove_tile(*tile);
+            self.remove_tile(tile);
         }
     }
 
     fn reset_captures(&mut self, captured: &Vec<Tile>) {
         self.get_player_mut().captured -= captured.len() as u8;
         for tile in captured {
-            self.insert_tile(*tile);
+            self.insert_tile(tile);
         }
     }
 
-    fn is_empty_neighbour(&self, tile: Tile) -> bool {
+    fn is_empty_neighbour(&self, tile: &Tile) -> bool {
         self.get_tile_value(tile) == 0
     }
 
-    pub fn update_empty_neighbours(&mut self, tile: Tile) {
+    pub fn update_empty_neighbours(&mut self, tile: &Tile) {
         for direction in MOVES.iter() {
             if direction.can_move_to(self.board_size, tile, 1) {
                 let neighbour = direction.get_next_tile(tile);
-                if self.is_empty_neighbour(neighbour) {
+                if self.is_empty_neighbour(&neighbour) {
                     self.empty_neighbours.insert(neighbour);
                 }
                 if direction.can_move_to(self.board_size, tile, 2) {
                     let neighbour = direction.get_tile_mult(tile, 2);
-                    if self.is_empty_neighbour(neighbour) {
+                    if self.is_empty_neighbour(&neighbour) {
                         self.empty_neighbours.insert(neighbour);
                     }
                 }
@@ -127,8 +127,8 @@ impl Game {
         self.empty_neighbours.remove(&tile);
     }
 
-    pub fn switch_player(&mut self, tile: Tile) {
-        self.get_player_mut().push_hit(tile);
+    pub fn switch_player(&mut self, tile: &Tile) {
+        self.get_player_mut().push_hit(*tile);
         let tmp_player = self.current_player;
         self.current_player = self.opponent_player;
         self.opponent_player = tmp_player;

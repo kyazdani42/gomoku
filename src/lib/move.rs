@@ -16,7 +16,7 @@ pub enum Move {
 
 impl Move {
     /// Check if we can move from `index` to a direction `depth` times
-    pub fn can_move_to(&self, board_size: i32, tile: Tile, depth: i32) -> bool {
+    pub fn can_move_to(&self, board_size: i32, tile: &Tile, depth: i32) -> bool {
         match self {
             Move::Left => tile.1 - depth > -1,
             Move::Right => tile.1 + depth < board_size,
@@ -29,7 +29,7 @@ impl Move {
         }
     }
 
-    pub fn num_move_to(&self, board_size: i32, tile: Tile) -> i32 {
+    pub fn num_move_to(&self, board_size: i32, tile: &Tile) -> i32 {
         match self {
             Move::Left => tile.1,
             Move::Right => (board_size - 1) - tile.1,
@@ -42,7 +42,7 @@ impl Move {
         }
     }
 
-    pub fn get_next_tile(&self, tile: Tile) -> Tile {
+    pub fn get_next_tile(&self, tile: &Tile) -> Tile {
         match self {
             Move::Left => (tile.0, tile.1 - 1),
             Move::Right => (tile.0, tile.1 + 1),
@@ -55,7 +55,7 @@ impl Move {
         }
     }
 
-    pub fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    pub fn get_tile_mult(&self, tile: &Tile, depth: i32) -> Tile {
         match self {
             Move::Left => (tile.0, tile.1 - depth),
             Move::Right => (tile.0, tile.1 + depth),

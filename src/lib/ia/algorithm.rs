@@ -26,7 +26,7 @@ pub fn run(game: &Game) -> Vec<Tile> {
             analyzer_num += 1;
         }
         let now = Instant::now();
-        let data = game.analyze(tile); 
+        let data = game.analyze(&tile); 
         unsafe {
             analyzer_time += now.elapsed().as_nanos();
         }
@@ -73,7 +73,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 analyzer_num += 1;
             }
             let now = Instant::now();
-            let data = game.analyze(index);
+            let data = game.analyze(&index);
             unsafe {
                 analyzer_time += now.elapsed().as_nanos();
             }
@@ -89,7 +89,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
             } else {
                 let old_alignment = game.opponent_alignments.clone();
                 let now = Instant::now();
-                game.update_game(index, data.alignments, &data.captured);
+                game.update_game(&index, data.alignments, &data.captured);
                 unsafe {
                     update_time += now.elapsed().as_nanos();
                 }
@@ -100,7 +100,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 );
 
                 let now = Instant::now();
-                game.reset_game(index, old_alignment, &data.captured, &empty_neighbours);
+                game.reset_game(&index, old_alignment, &data.captured, &empty_neighbours);
                 unsafe {
                     reset_time += now.elapsed().as_nanos();
                 }
@@ -122,7 +122,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 analyzer_num += 1;
             }
             let now = Instant::now();
-            let data = game.analyze(index);
+            let data = game.analyze(&index);
             unsafe {
                 analyzer_time += now.elapsed().as_nanos();
             }
@@ -139,7 +139,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 let old_alignment = game.opponent_alignments.clone();
 
                 let now = Instant::now();
-                game.update_game(index, data.alignments, &data.captured);
+                game.update_game(&index, data.alignments, &data.captured);
                 unsafe {
                     update_time += now.elapsed().as_nanos();
                 }
@@ -150,7 +150,7 @@ fn alphabeta(game: &mut Game, depth: u8, alpha: i32, beta: i32, maximizing_playe
                 );
 
                 let now = Instant::now();
-                game.reset_game(index, old_alignment, &data.captured, &empty_neighbours);
+                game.reset_game(&index, old_alignment, &data.captured, &empty_neighbours);
                 unsafe {
                     reset_time += now.elapsed().as_nanos();
                 }
