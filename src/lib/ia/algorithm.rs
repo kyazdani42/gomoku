@@ -1,7 +1,8 @@
 use std::cell::RefCell;
 extern crate rand;
-use rand::Rng;
+// use rand::Rng;
 
+use super::heuristic::heuristic;
 use crate::lib::game::{Game, Tile};
 
 use std::i32::{MAX, MIN};
@@ -10,6 +11,8 @@ static mut analyzer_time: u128 = 0;
 static mut analyzer_num: i32 = 0;
 static mut update_time: u128 = 0;
 static mut reset_time: u128 = 0;
+static mut heuristic_time: u128 = 0;
+static mut heuristic_num: i32 = 0;
 use std::time::Instant;
 
 pub fn run(game: Game) -> Vec<Tile> {
@@ -18,6 +21,8 @@ pub fn run(game: Game) -> Vec<Tile> {
         analyzer_num = 0;
         update_time = 0;
         reset_time = 0;
+        heuristic_time = 0;
+        heuristic_num = 0;
     }
 
     let mut best_hits = vec![];
@@ -55,6 +60,8 @@ pub fn run(game: Game) -> Vec<Tile> {
         println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
         println!("updates lasted {}ms", update_time / 1_000_000);
         println!("reset lasted {}ms", reset_time / 1_000_000);
+        println!("heuristic called {} times", heuristic_num);
+        println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
     }
 
     best_hits.sort_by(|a, b| a.1.cmp(&b.1));
@@ -72,9 +79,14 @@ fn alphabeta(
     maximizing_player: bool,
 ) -> i32 {
     if depth == 0 {
-        return 1;
+        let now = Instant::now();
+        let heuristic = heuristic(game);
+        unsafe {
+            heuristic_time += now.elapsed().as_nanos();
+            heuristic_num += 1;
+        }
+        return heuristic;
         // return rand::thread_rng().gen();
-        // return game.get_player().captured as i32;
     }
 
     let empty_neighbours = game.empty_neighbours.clone();
