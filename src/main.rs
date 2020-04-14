@@ -5,7 +5,6 @@ use std::time::Instant;
 // use hyper::service::service_fn;
 // use hyper::Server;
 
-// mod algorithm;
 mod lib;
 // mod router;
 
@@ -41,10 +40,21 @@ fn main() {
 
     let state = &mut state;
 
-    for tile in vec![(10, 10), (11, 15), (13, 2), (9, 2), (3, 9), (11, 9), (18, 2), (12, 3), (15, 12), (15, 13), (12, 13)] {
+    for tile in &[
+        (10, 10),
+        (11, 15),
+        (13, 2),
+        (9, 2),
+        (3, 9),
+        (11, 9),
+        (18, 2),
+        (12, 3),
+        (15, 12),
+        (15, 13),
+        (12, 13),
+    ] {
         let now = Instant::now();
-        state.run(tile);
-        println!("total time: {}ms", now.elapsed().as_millis());
-        println!("");
+        state.run(*tile);
+        println!("total time: {}ms\n", now.elapsed().as_millis());
     }
 }

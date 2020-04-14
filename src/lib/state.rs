@@ -44,7 +44,7 @@ impl State {
     }
 
     pub fn run_ia(&mut self) {
-        if self.should_run_ia() && self.best_hits.len() > 0 {
+        if self.should_run_ia() && !self.best_hits.is_empty() {
             self.run(self.best_hits[self.best_hits.len() - 1]);
         }
     }
@@ -54,23 +54,22 @@ impl State {
     }
 
     pub fn run(&mut self, tile: Tile) {
-        let tile_ref = &tile;
-        if !self.game.validate_tile(tile_ref) || self.game.get_tile_value(tile_ref) != 0 {
+        if !self.game.validate_tile(tile) || self.game.get_tile_value(tile) != 0 {
             return;
         }
 
-        let index_data = self.game.analyze(&tile);
-        self.game.insert_tile(tile_ref);
+        let index_data = self.game.analyze(tile);
+        self.game.insert_tile(tile);
         self.game.update_opponent_alignments(&index_data.alignments);
         self.game.update_captures(&index_data.captured);
-        self.game.update_empty_neighbours(tile_ref);
+        self.game.update_empty_neighbours(tile);
 
         if index_data.win {
             self.winner = self.game.current_player
         } else if index_data.oponent_win {
             self.winner = self.game.opponent_player
         } else {
-            self.game.switch_player(tile_ref);
+            self.game.switch_player(tile);
             self.best_hits = ia::run(self.game.clone());
             self.update_forbidden();
         }
@@ -83,8 +82,9 @@ impl State {
     fn reset_forbidden(&mut self) {
         for line in 0..self.game.board_size {
             for col in 0..self.game.board_size {
-                if self.game.get_tile_value(&(line, col)) == 3 {
-                    self.game.remove_tile(&(line, col));
+                let tile = (line, col);
+                if self.game.get_tile_value(tile) == 3 {
+                    self.game.remove_tile(tile);
                 }
             }
         }
@@ -94,9 +94,9 @@ impl State {
         self.reset_forbidden();
         let empty_neighbours = self.game.empty_neighbours.clone();
         for neighbour in empty_neighbours {
-            let data = self.game.analyze(&neighbour);
+            let data = self.game.analyze(neighbour);
             if data.double_free_three {
-                self.game.insert_forbidden(&neighbour);
+                self.game.insert_forbidden(neighbour);
             }
         }
     }

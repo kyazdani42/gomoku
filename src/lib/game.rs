@@ -3,7 +3,7 @@ use super::player::Player;
 use super::r#move::Moves;
 use std::cmp::{max, min};
 use std::collections::HashSet;
-use std::sync::{Arc,Mutex};
+use std::sync::{Arc, Mutex};
 
 pub type Tile = (i32, i32);
 
@@ -37,7 +37,7 @@ impl Game {
         }
     }
 
-    pub fn update_game(&mut self, tile: &Tile, alignments: &Vec<Vec<Tile>>, captured: &Vec<Tile>) {
+    pub fn update_game(&mut self, tile: Tile, alignments: &[Vec<Tile>], captured: &[Tile]) {
         self.insert_tile(tile);
         self.update_opponent_alignments(alignments);
         self.update_captures(captured);
@@ -47,9 +47,9 @@ impl Game {
 
     pub fn reset_game(
         &mut self,
-        tile: &Tile,
-        alignments: &Vec<Vec<Tile>>,
-        captured: &Vec<Tile>,
+        tile: Tile,
+        alignments: &[Vec<Tile>],
+        captured: &[Tile],
         empty_neighbours: &HashSet<Tile>,
     ) {
         self.reset_switch_player();
@@ -59,49 +59,49 @@ impl Game {
         self.empty_neighbours = empty_neighbours.to_owned();
     }
 
-    pub fn analyze(&self, tile: &Tile) -> AnalyzedTile {
+    pub fn analyze(&self, tile: Tile) -> AnalyzedTile {
         analyze_index(tile, self)
     }
 
-    pub fn insert_tile(&mut self, tile: &Tile) {
+    pub fn insert_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
     }
 
-    pub fn insert_forbidden(&mut self, tile: &Tile) {
+    pub fn insert_forbidden(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 3;
     }
 
-    pub fn remove_tile(&mut self, tile: &Tile) {
+    pub fn remove_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 0;
     }
 
-    pub fn get_tile_value(&self, tile: &Tile) -> u8 {
+    pub fn get_tile_value(&self, tile: Tile) -> u8 {
         self.board[tile.0 as usize][tile.1 as usize]
     }
 
-    pub fn validate_tile(&self, tile: &Tile) -> bool {
+    pub fn validate_tile(&self, tile: Tile) -> bool {
         -1 < tile.0 && tile.0 < self.board_size && -1 < tile.1 && tile.1 < self.board_size
     }
 
-    pub fn update_captures(&mut self, captured: &Vec<Tile>) {
+    pub fn update_captures(&mut self, captured: &[Tile]) {
         self.get_player_mut().captured += captured.len() as u8;
         for tile in captured {
-            self.remove_tile(tile);
+            self.remove_tile(*tile);
         }
     }
 
-    fn reset_captures(&mut self, captured: &Vec<Tile>) {
+    fn reset_captures(&mut self, captured: &[Tile]) {
         self.get_player_mut().captured -= captured.len() as u8;
         for tile in captured {
-            self.insert_tile(tile);
+            self.insert_tile(*tile);
         }
     }
 
-    pub fn update_empty_neighbours(&mut self, tile: &Tile) {
+    pub fn update_empty_neighbours(&mut self, tile: Tile) {
         for i in max(tile.0 - 2, 0)..=min(tile.0 + 2, self.board_size - 1) {
             for j in max(tile.1 - 2, 0)..=min(tile.1 + 2, self.board_size - 1) {
                 let t = (i, j);
-                if self.get_tile_value(&t) == 0 {
+                if self.get_tile_value(t) == 0 {
                     self.empty_neighbours.insert(t);
                 }
             }
@@ -109,8 +109,8 @@ impl Game {
         self.empty_neighbours.remove(&tile);
     }
 
-    pub fn switch_player(&mut self, tile: &Tile) {
-        self.get_player_mut().push_hit(*tile);
+    pub fn switch_player(&mut self, tile: Tile) {
+        self.get_player_mut().push_hit(tile);
         let tmp_player = self.current_player;
         self.current_player = self.opponent_player;
         self.opponent_player = tmp_player;
@@ -147,7 +147,7 @@ impl Game {
         }
     }
 
-    pub fn update_opponent_alignments(&mut self, alignments: &Vec<Vec<Tile>>) {
+    pub fn update_opponent_alignments(&mut self, alignments: &[Vec<Tile>]) {
         self.opponent_alignments = alignments.to_owned();
     }
 }

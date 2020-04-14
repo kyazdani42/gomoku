@@ -30,7 +30,7 @@ pub fn run(game: Game) -> Vec<Tile> {
             analyzer_num += 1;
         }
         let now = Instant::now();
-        let data = game.analyze(&tile);
+        let data = game.analyze(tile);
         unsafe {
             analyzer_time += now.elapsed().as_nanos();
         }
@@ -45,7 +45,7 @@ pub fn run(game: Game) -> Vec<Tile> {
             best_hits.push((tile, MIN));
         } else {
             let mut game = game.clone();
-            game.update_game(&tile, &data.alignments, &data.captured);
+            game.update_game(tile, &data.alignments, &data.captured);
             best_hits.push((tile, alphabeta(&mut game, 9, &alpha, &beta, false)));
         }
     }
@@ -92,6 +92,7 @@ fn alphabeta(
     };
 
     for tile in &empty_neighbours {
+        let tile = *tile;
         let now = Instant::now();
         let data = game.analyze(tile);
         unsafe {
