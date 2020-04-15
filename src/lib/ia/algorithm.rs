@@ -56,12 +56,12 @@ pub fn run(game: Game) -> Vec<Tile> {
     }
 
     unsafe {
-        println!("analyzed called {} times", analyzer_num);
-        println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
-        println!("updates lasted {}ms", update_time / 1_000_000);
-        println!("reset lasted {}ms", reset_time / 1_000_000);
-        println!("heuristic called {} times", heuristic_num);
-        println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
+        // println!("analyzed called {} times", analyzer_num);
+        // println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
+        // println!("updates lasted {}ms", update_time / 1_000_000);
+        // println!("reset lasted {}ms", reset_time / 1_000_000);
+        // println!("heuristic called {} times", heuristic_num);
+        // println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
     }
 
     best_hits.sort_by(|a, b| a.1.cmp(&b.1));
@@ -80,7 +80,7 @@ fn alphabeta(
 ) -> i32 {
     if depth == 0 {
         let now = Instant::now();
-        let heuristic = heuristic(game);
+        let heuristic = -heuristic(game);
         unsafe {
             heuristic_time += now.elapsed().as_nanos();
             heuristic_num += 1;

@@ -126,12 +126,12 @@ const Block = ({ index, block, onClick, player }) => {
         onClick(index);
         setHover(false);
       }}
-      onMouseOver={() => setHover(block === 0 || block === 5)}
+      onMouseOver={() => setHover(block === 0 || block === 5 || block === 6 || block === 7)}
       onMouseOut={() => setHover(false)}
     >
       {cross}
       {block === 3 && <Forbidden />}
-      {block === 5 && <BestStone />}
+      {block === 5 || block === 6 || block == 7 ? <BestStone val={block} /> : null}
       <WhiteStone hover={hover && player === 1} occupied={block === 1} />
       <BlackStone hover={hover && player === 2} occupied={block === 2} />
     </div>
@@ -245,7 +245,7 @@ const Forbidden = () => (
   </svg>
 );
 
-const BestStone = () => (
+const BestStone = ({ val }) => (
   <div
     style={{
       overflow: 'hidden',
@@ -257,7 +257,7 @@ const BestStone = () => (
       width: '40px',
     }}
   >
-    1
+    {val - 4}
   </div>
 );
 

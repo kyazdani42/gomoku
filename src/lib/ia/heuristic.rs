@@ -1,43 +1,45 @@
 use crate::lib::game::Game;
 
 pub fn heuristic(game: &Game) -> i32 {
-    let player = game.get_player();
-    let opponent_player = game.get_opponent();
-    let mut player_value = 0;
-    let mut opponent_value = 0;
+    let player = game.current_player;
+    let opponent = game.opponent_player;
 
-    let board_size = game.board_size;
-    let index_size = board_size - 1;
+    let cur_player = game.get_player();
+    let op_player = game.get_player();
 
-    for line in 0..board_size {
-        for col in 0..board_size {
-            let tile = (line, col);
-            let tile_value = game.get_tile_value(tile);
-            if tile_value == 1 || tile_value == 2 {
-                // sur une ligne
+    let mut possible_capture = vec![0, 0];
+
+    let board_lines = &game.board_lines;
+    for line in board_lines {
+        let mut i = 0;
+        let mut value = 4;
+        let mut prev_value = 4;
+        let line_len = line.len();
+        // let mut num_empty_tiles = 0;
+        let mut aligned: Vec<i32> = vec![0, 0, 0];
+
+        while i < line_len - 1 {
+            prev_value = value;
+            value = game.get_tile_value(line[i]);
+            if value == 3 { value = 0 }; // fix that later it should not happen
+            // also i noticed the heuristic and updates can get a little slow when called too many times
+            i += 1;
+            aligned[value as usize] = 1;
+
+            while i < line_len && game.get_tile_value(line[i]) == value {
+                i += 1;
+                aligned[value as usize] += 1;
             }
-            if line == 0 {
-                // initialize
 
-                for inline in 0..board_size {
-                    let column_tile = (inline, col);
-
-                    let inline = if inline < col { inline } else { inline - col };
-                    let tile = (inline, inline);
-                    let tile_value = game.get_tile_value(tile);
-                    if tile_value == 1 || tile_value == 2 {
-                        //
-                    }
-
-                    let second_tile = (index_size - inline, inline);
-                    let tile_value = game.get_tile_value(second_tile);
-                    if tile_value == 1 || tile_value == 2 {
-                        //
-                    }
+            if value != 0 && aligned[value as usize] == 2 && i < line_len && prev_value != 4 {
+                let next_value = game.get_tile_value(line[i]);
+                if (next_value == 0 && prev_value != 0) || (next_value != 0 && prev_value == 0) {
+                    possible_capture[value as usize - 1] = 2;
                 }
             }
         }
     }
 
-    player.captured as i32 - opponent_player.captured as i32
+    (cur_player.captured as i32 + possible_capture[player as usize - 1])
+        - (op_player.captured as i32 + possible_capture[opponent as usize - 1])
 }

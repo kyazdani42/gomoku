@@ -70,7 +70,10 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
     let index = find_param(&params, "index")?;
     let index = parse_param(&index)?;
 
-    let mut state = state.lock().unwrap();
+    let mut state = match state.lock() {
+        Ok(guard) => guard,
+        Err(_) => return Option::None
+    };
     let board_size = state.get_board_size() as i32;
     let index = index as i32;
     let idx = (index / board_size, index % board_size);

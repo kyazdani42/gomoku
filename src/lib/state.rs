@@ -115,11 +115,12 @@ impl State {
 
     fn get_board(&self) -> Vec<u8> {
         let mut cloned_board = self.game.board.clone();
-        let len = self.best_hits.len() as i32 - 1;
+        let mut hits = self.best_hits.clone();
+        hits.reverse();
         for i in 0..3 {
-            if len - i >= 0 {
-                let tile = self.best_hits[(len - i) as usize];
-                cloned_board[tile.0 as usize][tile.1 as usize] = 5;
+            if i < hits.len() {
+                let tile = self.best_hits[i];
+                cloned_board[tile.0 as usize][tile.1 as usize] = 5 + i as u8;
             }
         }
         cloned_board.concat()

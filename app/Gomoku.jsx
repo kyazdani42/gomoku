@@ -29,7 +29,7 @@ export const Gomoku = () => {
         onReset={() => setState(null)}
         onClick={(payload) => {
           let tile = state.board[payload];
-          if (tile === 0 || tile === 5) {
+            if ([0,5,6,7].some(t => tile === t)) {
             const newBoard = state.board.slice();
             newBoard[payload] = state.player;
             setState({ ...state, board: newBoard });

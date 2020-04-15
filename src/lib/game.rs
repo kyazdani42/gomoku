@@ -1,9 +1,11 @@
-use super::analyze::{analyze_index, AnalyzedTile};
-use super::player::Player;
-use super::r#move::Moves;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
+
+use super::analyze::{analyze_index, AnalyzedTile};
+use super::create_board::create_board;
+use super::player::Player;
+use super::r#move::Moves;
 
 pub type Tile = (i32, i32);
 
@@ -15,6 +17,7 @@ pub struct Game {
     pub opponent_player: u8,
     pub board_size: i32,
     pub board: Vec<Vec<u8>>,
+    pub board_lines: Vec<Vec<Tile>>,
     pub empty_neighbours: HashSet<Tile>,
     pub opponent_alignments: Vec<Vec<Tile>>,
     pub moves: Arc<Mutex<Moves>>,
@@ -29,6 +32,7 @@ impl Game {
             player2: Player::new(),
             empty_neighbours: HashSet::new(),
             opponent_alignments: vec![],
+            board_lines: create_board(board_size),
             moves: Arc::new(Mutex::new(Moves::new(board_size))),
             board: (0..board_size)
                 .map(|_| (0..board_size).map(|_| 0).collect::<Vec<u8>>())
@@ -68,6 +72,7 @@ impl Game {
     }
 
     pub fn insert_forbidden(&mut self, tile: Tile) {
+        // TODO: REMOVE THAT IT SHOULD NOT BE IN THE BOARD DIRECTLY
         self.board[tile.0 as usize][tile.1 as usize] = 3;
     }
 
