@@ -129,8 +129,8 @@ impl Move for BottomRight {
 }
 
 pub struct Moves {
-    pub all_moves: Vec<Box<dyn Move + Send>>,
-    pub straight_moves: Vec<Vec<Box<dyn Move + Send>>>,
+    pub all_moves: Vec<Box<dyn Move>>,
+    pub straight_moves: Vec<Vec<Box<dyn Move>>>,
 }
 
 impl Moves {

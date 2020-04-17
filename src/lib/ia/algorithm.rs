@@ -1,6 +1,5 @@
-use std::cell::RefCell;
-extern crate rand;
-// use rand::Rng;
+// extern crate rand;
+// use rand::{Rng,thread_rng};
 
 use super::heuristic::heuristic;
 use crate::lib::game::{Game, Tile};
@@ -28,8 +27,8 @@ pub fn run(game: Game) -> Vec<Tile> {
     let mut best_hits = vec![];
     let empty_neighbours = game.empty_neighbours.clone();
 
-    let alpha = RefCell::new(MIN);
-    let beta = RefCell::new(MAX);
+    let depth = 1;
+    let mut alpha = MIN;
     for tile in empty_neighbours {
         unsafe {
             analyzer_num += 1;
@@ -46,61 +45,60 @@ pub fn run(game: Game) -> Vec<Tile> {
 
         if data.win {
             best_hits.push((tile, MAX));
+            break;
         } else if data.oponent_win {
             best_hits.push((tile, MIN));
         } else {
             let mut game = game.clone();
             game.update_game(tile, &data.alignments, &data.captured);
-            best_hits.push((tile, alphabeta(&mut game, 9, &alpha, &beta, false)));
+            let value = alphabeta(&mut game, depth - 1, alpha, MAX, false);
+            if value > alpha {
+                alpha = value;
+            }
+            best_hits.push((tile, value));
         }
     }
 
     unsafe {
-        // println!("analyzed called {} times", analyzer_num);
-        // println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
-        // println!("updates lasted {}ms", update_time / 1_000_000);
-        // println!("reset lasted {}ms", reset_time / 1_000_000);
-        // println!("heuristic called {} times", heuristic_num);
-        // println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
+        println!("analyzed called {} times", analyzer_num);
+        println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
+        println!("updates lasted {}ms", update_time / 1_000_000);
+        println!("reset lasted {}ms", reset_time / 1_000_000);
+        println!("heuristic called {} times", heuristic_num);
+        println!("heuristic lasted {}ms\n", heuristic_time / 1_000_000);
     }
 
-    best_hits.sort_by(|a, b| a.1.cmp(&b.1));
-    // for v in &best_hits {
-    //     println!("{} {}, h: {}", (v.0).0, (v.0).1, v.1);
-    // }
+    best_hits.sort_by(|a, b| b.1.cmp(&a.1));
+    for v in &best_hits {
+        println!("{} {}, h: {}", (v.0).0, (v.0).1, v.1);
+    }
     best_hits.iter().map(|v| v.0).collect()
 }
 
 fn alphabeta(
     game: &mut Game,
     depth: i32,
-    alpha: &RefCell<i32>,
-    beta: &RefCell<i32>,
+    mut alpha: i32,
+    mut beta: i32,
     maximizing_player: bool,
 ) -> i32 {
     if depth == 0 {
         let now = Instant::now();
-        let heuristic = -heuristic(game);
+        let h = heuristic(game);
+        // let h = thread_rng().gen();
         unsafe {
             heuristic_time += now.elapsed().as_nanos();
             heuristic_num += 1;
         }
-        return heuristic;
-        // return rand::thread_rng().gen();
+        return h;
     }
 
     let empty_neighbours = game.empty_neighbours.clone();
     let old_alignment = game.opponent_alignments.clone();
-    let (mut value, alpha_value) = if maximizing_player {
-        (MIN, alpha)
+    let mut value = if maximizing_player {
+        MIN
     } else {
-        (MAX, beta)
-    };
-
-    let cmp_fn = if maximizing_player {
-        i32::max
-    } else {
-        i32::min
+        MAX
     };
 
     for tile in &empty_neighbours {
@@ -116,15 +114,15 @@ fn alphabeta(
             continue;
         } else if data.win {
             return if maximizing_player {
-                MAX - depth * 1000
+                4000 - depth
             } else {
-                MIN + depth * 1000
+                -4000 + depth
             };
         } else if data.oponent_win {
             return if maximizing_player {
-                MIN + depth * 1000
+                -4000 + depth
             } else {
-                MAX - depth * 1000
+                4000 - depth
             };
         } else {
             let now = Instant::now();
@@ -132,19 +130,32 @@ fn alphabeta(
             unsafe {
                 update_time += now.elapsed().as_nanos();
             }
-            value = cmp_fn(
-                alphabeta(game, depth - 1, alpha, beta, !maximizing_player),
-                value,
-            );
-            let now = Instant::now();
-            game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
-            unsafe {
-                reset_time += now.elapsed().as_nanos();
-            }
+            if maximizing_player {
+                value = i32::max(
+                    alphabeta(game, depth - 1, alpha, beta, !maximizing_player),
+                    value,
+                );
+                let now = Instant::now();
+                game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
+                unsafe {
+                    reset_time += now.elapsed().as_nanos();
+                }
 
-            let v = *alpha_value.borrow();
-            alpha_value.replace(cmp_fn(v, value));
-            if *alpha >= *beta {
+                alpha = i32::max(alpha, value);
+            } else {
+                value = i32::min(
+                    alphabeta(game, depth - 1, alpha, beta, true),
+                    value,
+                );
+                let now = Instant::now();
+                game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
+                unsafe {
+                    reset_time += now.elapsed().as_nanos();
+                }
+                beta = i32::min(beta, value);
+
+            }
+            if alpha >= beta {
                 break;
             }
         }

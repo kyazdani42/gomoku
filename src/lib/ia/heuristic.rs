@@ -5,7 +5,7 @@ pub fn heuristic(game: &Game) -> i32 {
     let opponent = game.opponent_player;
 
     let cur_player = game.get_player();
-    let op_player = game.get_player();
+    let op_player = game.get_opponent();
 
     let mut possible_capture = vec![0, 0];
 
@@ -21,8 +21,6 @@ pub fn heuristic(game: &Game) -> i32 {
         while i < line_len - 1 {
             prev_value = value;
             value = game.get_tile_value(line[i]);
-            if value == 3 { value = 0 }; // fix that later it should not happen
-            // also i noticed the heuristic and updates can get a little slow when called too many times
             i += 1;
             aligned[value as usize] = 1;
 
@@ -34,12 +32,23 @@ pub fn heuristic(game: &Game) -> i32 {
             if value != 0 && aligned[value as usize] == 2 && i < line_len && prev_value != 4 {
                 let next_value = game.get_tile_value(line[i]);
                 if (next_value == 0 && prev_value != 0) || (next_value != 0 && prev_value == 0) {
-                    possible_capture[value as usize - 1] = 2;
+                    possible_capture[value as usize - 1] += 2;
                 }
             }
         }
     }
 
-    (cur_player.captured as i32 + possible_capture[player as usize - 1])
-        - (op_player.captured as i32 + possible_capture[opponent as usize - 1])
+    let mut cur_player_capture = cur_player.captured as i32 * 10;
+    cur_player_capture *= cur_player_capture;
+
+    let mut player_possible = possible_capture[player as usize - 1];
+    player_possible *= player_possible;
+
+    let mut op_capture = op_player.captured as i32 * 10;
+    op_capture *= op_capture;
+
+    let mut op_possible = possible_capture[opponent as usize - 1];
+    op_possible *= op_possible;
+
+    (cur_player_capture + player_possible) - (op_capture + op_possible)
 }

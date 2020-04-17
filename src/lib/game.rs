@@ -1,9 +1,7 @@
-use std::cmp::{max, min};
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
 
 use super::analyze::{analyze_index, AnalyzedTile};
-use super::create_board::create_board;
+use super::create_board::{create_board, create_tiles_directions, create_tiles_neighbours};
 use super::player::Player;
 use super::r#move::Moves;
 
@@ -18,13 +16,15 @@ pub struct Game {
     pub board_size: i32,
     pub board: Vec<Vec<u8>>,
     pub board_lines: Vec<Vec<Tile>>,
+    pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
+    pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
     pub empty_neighbours: HashSet<Tile>,
-    pub opponent_alignments: Vec<Vec<Tile>>,
-    pub moves: Arc<Mutex<Moves>>,
+    pub opponent_alignments: Vec<Vec<Tile>>
 }
 
 impl Game {
     pub fn new(board_size: i32) -> Self {
+        let moves = Moves::new(board_size);
         Self {
             current_player: 1,
             opponent_player: 2,
@@ -33,7 +33,8 @@ impl Game {
             empty_neighbours: HashSet::new(),
             opponent_alignments: vec![],
             board_lines: create_board(board_size),
-            moves: Arc::new(Mutex::new(Moves::new(board_size))),
+            tiles_directions: create_tiles_directions(board_size, &moves.straight_moves),
+            tiles_neighbours: create_tiles_neighbours(board_size, &moves.all_moves),
             board: (0..board_size)
                 .map(|_| (0..board_size).map(|_| 0).collect::<Vec<u8>>())
                 .collect(),
@@ -71,11 +72,6 @@ impl Game {
         self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
     }
 
-    pub fn insert_forbidden(&mut self, tile: Tile) {
-        // TODO: REMOVE THAT IT SHOULD NOT BE IN THE BOARD DIRECTLY
-        self.board[tile.0 as usize][tile.1 as usize] = 3;
-    }
-
     pub fn remove_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 0;
     }
@@ -103,14 +99,12 @@ impl Game {
     }
 
     pub fn update_empty_neighbours(&mut self, tile: Tile) {
-        for i in max(tile.0 - 2, 0)..=min(tile.0 + 2, self.board_size - 1) {
-            for j in max(tile.1 - 2, 0)..=min(tile.1 + 2, self.board_size - 1) {
-                let t = (i, j);
-                if self.get_tile_value(t) == 0 {
-                    self.empty_neighbours.insert(t);
-                }
+        for tile in &self.tiles_neighbours[tile.0 as usize][tile.1 as usize] {
+            if self.get_tile_value(*tile) == 0 {
+                self.empty_neighbours.insert(*tile);
             }
         }
+
         self.empty_neighbours.remove(&tile);
     }
 

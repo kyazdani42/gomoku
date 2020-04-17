@@ -20,6 +20,7 @@ pub struct State {
     game: Game,
     winner: u8,
     best_hits: Vec<Tile>,
+    forbidden: Vec<Tile>,
 }
 
 impl State {
@@ -30,6 +31,7 @@ impl State {
             winner: 0,
             game: Game::new(19),
             best_hits: vec![(0, 0)],
+            forbidden: vec![],
         }
     }
 
@@ -40,12 +42,13 @@ impl State {
             winner: 0,
             game: Game::new(board_size as i32),
             best_hits: vec![(board_size as i32 / 2, board_size as i32 / 2)],
+            forbidden: vec![],
         };
     }
 
     pub fn run_ia(&mut self) {
         if self.should_run_ia() && !self.best_hits.is_empty() {
-            self.run(self.best_hits[self.best_hits.len() - 1]);
+            self.run(self.best_hits[0]);
         }
     }
 
@@ -65,14 +68,17 @@ impl State {
         self.game.update_empty_neighbours(tile);
 
         if index_data.win {
-            self.winner = self.game.current_player
+            self.winner = self.game.current_player;
+            self.game.switch_player(tile);
         } else if index_data.oponent_win {
-            self.winner = self.game.opponent_player
+            self.winner = self.game.opponent_player;
+            self.game.switch_player(tile);
         } else {
             self.game.switch_player(tile);
             self.best_hits = ia::run(self.game.clone());
-            self.update_forbidden();
         }
+
+        self.update_forbidden();
     }
 
     fn should_run_ia(&self) -> bool {
@@ -80,14 +86,7 @@ impl State {
     }
 
     fn reset_forbidden(&mut self) {
-        for line in 0..self.game.board_size {
-            for col in 0..self.game.board_size {
-                let tile = (line, col);
-                if self.game.get_tile_value(tile) == 3 {
-                    self.game.remove_tile(tile);
-                }
-            }
-        }
+        self.forbidden.clear();
     }
 
     fn update_forbidden(&mut self) {
@@ -96,7 +95,7 @@ impl State {
         for neighbour in empty_neighbours {
             let data = self.game.analyze(neighbour);
             if data.double_free_three {
-                self.game.insert_forbidden(neighbour);
+                self.forbidden.push(neighbour);
             }
         }
     }
@@ -115,13 +114,14 @@ impl State {
 
     fn get_board(&self) -> Vec<u8> {
         let mut cloned_board = self.game.board.clone();
-        let mut hits = self.best_hits.clone();
-        hits.reverse();
         for i in 0..3 {
-            if i < hits.len() {
+            if i < self.best_hits.len() {
                 let tile = self.best_hits[i];
                 cloned_board[tile.0 as usize][tile.1 as usize] = 5 + i as u8;
             }
+        }
+        for tile in &self.forbidden {
+            cloned_board[tile.0 as usize][tile.1 as usize] = 3;
         }
         cloned_board.concat()
     }
