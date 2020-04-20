@@ -27,7 +27,7 @@ pub fn run(game: Game) -> Vec<Tile> {
     let mut best_hits = vec![];
     let empty_neighbours = game.empty_neighbours.clone();
 
-    let depth = 1;
+    let depth = 2;
     let mut alpha = MIN;
     for tile in empty_neighbours {
         unsafe {
@@ -62,10 +62,10 @@ pub fn run(game: Game) -> Vec<Tile> {
     unsafe {
         println!("analyzed called {} times", analyzer_num);
         println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
-        println!("updates lasted {}ms", update_time / 1_000_000);
-        println!("reset lasted {}ms", reset_time / 1_000_000);
         println!("heuristic called {} times", heuristic_num);
-        println!("heuristic lasted {}ms\n", heuristic_time / 1_000_000);
+        println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
+        println!("updates lasted {}ms", update_time / 1_000_000);
+        println!("reset lasted {}ms\n", reset_time / 1_000_000);
     }
 
     best_hits.sort_by(|a, b| b.1.cmp(&a.1));
@@ -84,7 +84,7 @@ fn alphabeta(
 ) -> i32 {
     if depth == 0 {
         let now = Instant::now();
-        let h = heuristic(game);
+        let h = heuristic(game, maximizing_player);
         // let h = thread_rng().gen();
         unsafe {
             heuristic_time += now.elapsed().as_nanos();
@@ -95,11 +95,7 @@ fn alphabeta(
 
     let empty_neighbours = game.empty_neighbours.clone();
     let old_alignment = game.opponent_alignments.clone();
-    let mut value = if maximizing_player {
-        MIN
-    } else {
-        MAX
-    };
+    let mut value = if maximizing_player { MIN } else { MAX };
 
     for tile in &empty_neighbours {
         let tile = *tile;
@@ -132,7 +128,7 @@ fn alphabeta(
             }
             if maximizing_player {
                 value = i32::max(
-                    alphabeta(game, depth - 1, alpha, beta, !maximizing_player),
+                    alphabeta(game, depth - 1, alpha, beta, false),
                     value,
                 );
                 let now = Instant::now();
@@ -143,17 +139,13 @@ fn alphabeta(
 
                 alpha = i32::max(alpha, value);
             } else {
-                value = i32::min(
-                    alphabeta(game, depth - 1, alpha, beta, true),
-                    value,
-                );
+                value = i32::min(alphabeta(game, depth - 1, alpha, beta, true), value);
                 let now = Instant::now();
                 game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
                 unsafe {
                     reset_time += now.elapsed().as_nanos();
                 }
                 beta = i32::min(beta, value);
-
             }
             if alpha >= beta {
                 break;

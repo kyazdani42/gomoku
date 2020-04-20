@@ -1,39 +1,64 @@
 use crate::lib::game::Game;
 
-pub fn heuristic(game: &Game) -> i32 {
+pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
     let player = game.current_player;
     let opponent = game.opponent_player;
 
     let cur_player = game.get_player();
     let op_player = game.get_opponent();
 
+    let mut alignment_values = vec![0, 0];
     let mut possible_capture = vec![0, 0];
 
-    let board_lines = &game.board_lines;
-    for line in board_lines {
-        let mut i = 0;
-        let mut value = 4;
-        let mut prev_value = 4;
-        let line_len = line.len();
-        // let mut num_empty_tiles = 0;
-        let mut aligned: Vec<i32> = vec![0, 0, 0];
+    for tile in &game.current_tiles {
+        let tile = *tile;
+        let p = game.get_tile_value(tile);
+        let op = if p == 1 { 2 } else { 1 };
+        for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
+            let mut real_aligned = 0;
+            let mut empty_tiles = vec![0, 0];
+            let mut owned_tiles = vec![0, 0];
 
-        while i < line_len - 1 {
-            prev_value = value;
-            value = game.get_tile_value(line[i]);
-            i += 1;
-            aligned[value as usize] = 1;
+            for idx in 0..2 {
+                let direction = &directions[idx];
+                let len = direction.len();
+                if len == 0 {
+                    continue;
+                }
 
-            while i < line_len && game.get_tile_value(line[i]) == value {
-                i += 1;
-                aligned[value as usize] += 1;
+                let mut i = 0;
+                while i < direction.len() {
+                    let t = direction[i];
+                    let value = game.get_tile_value(t);
+                    if value == op {
+                        break;
+                    } else if value == 0 {
+                        empty_tiles[idx] += 1;
+                    } else if empty_tiles[idx] == 0 {
+                        real_aligned += 1;
+                    } else {
+                        owned_tiles[idx] += 1;
+                    }
+
+                    i += 1;
+                }
+
+                if i == 0 && len > 2 {
+                    let next_tile = direction[1];
+                    if game.get_tile_value(next_tile) == opponent
+                        && game.get_tile_value(direction[2]) == 0
+                    {
+                        let _first_op_tile = direction[0];
+                        possible_capture[p as usize - 1] += 2;
+                        // captures.push(whatever)
+                    }
+                }
             }
 
-            if value != 0 && aligned[value as usize] == 2 && i < line_len && prev_value != 4 {
-                let next_value = game.get_tile_value(line[i]);
-                if (next_value == 0 && prev_value != 0) || (next_value != 0 && prev_value == 0) {
-                    possible_capture[value as usize - 1] += 2;
-                }
+            let num_empty = empty_tiles[0] + empty_tiles[1];
+            let num_owned = owned_tiles[0] + owned_tiles[1];
+            if real_aligned + num_owned + num_empty > 5 {
+                alignment_values[p as usize - 1] += (real_aligned * real_aligned * real_aligned * real_aligned) + (num_owned * num_owned + num_empty);
             }
         }
     }
@@ -49,6 +74,8 @@ pub fn heuristic(game: &Game) -> i32 {
 
     let mut op_possible = possible_capture[opponent as usize - 1];
     op_possible *= op_possible;
+    let op_align_value = alignment_values[opponent as usize - 1];
+    let player_align_value = alignment_values[player as usize - 1];
 
-    (cur_player_capture + player_possible) - (op_capture + op_possible)
+    (cur_player_capture + player_possible + player_align_value) - (op_capture + op_possible + op_align_value)
 }

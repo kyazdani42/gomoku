@@ -14,6 +14,7 @@ pub struct Game {
     pub current_player: u8,
     pub opponent_player: u8,
     pub board_size: i32,
+    pub current_tiles: HashSet<Tile>,
     pub board: Vec<Vec<u8>>,
     pub board_lines: Vec<Vec<Tile>>,
     pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
@@ -30,6 +31,7 @@ impl Game {
             opponent_player: 2,
             player1: Player::new(),
             player2: Player::new(),
+            current_tiles: HashSet::new(),
             empty_neighbours: HashSet::new(),
             opponent_alignments: vec![],
             board_lines: create_board(board_size),
@@ -70,10 +72,12 @@ impl Game {
 
     pub fn insert_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
+        self.current_tiles.insert(tile);
     }
 
     pub fn remove_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize][tile.1 as usize] = 0;
+        self.current_tiles.remove(&tile);
     }
 
     pub fn get_tile_value(&self, tile: Tile) -> u8 {
