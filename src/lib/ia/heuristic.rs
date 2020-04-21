@@ -16,8 +16,8 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
         let op = if p == 1 { 2 } else { 1 };
         for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
             let mut real_aligned = 0;
-            let mut empty_tiles = vec![0, 0];
-            let mut owned_tiles = vec![0, 0];
+            let mut empty_tiles: u16 = 0;
+            let mut owned_tiles: u16 = 0;
 
             for idx in 0..2 {
                 let direction = &directions[idx];
@@ -33,11 +33,16 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
                     if value == op {
                         break;
                     } else if value == 0 {
-                        empty_tiles[idx] += 1;
-                    } else if empty_tiles[idx] == 0 {
+                        // 0Xff
+                        // we store at 0X10 or 0X01 depending on idx.
+                        empty_tiles += 1 << (idx*8);
+                        // to compare, move idx to the right, so the right side byte is removed when idx is 1,
+                        // and then mask with 0x0f to get the rightmost value
+                        // and you get the 'no empty tiles' comparison
+                    } else if (empty_tiles >> (idx*8)) & 0x0f == 0 {
                         real_aligned += 1;
                     } else {
-                        owned_tiles[idx] += 1;
+                        owned_tiles += 1 << (idx*8);
                     }
 
                     i += 1;
@@ -55,8 +60,8 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
                 }
             }
 
-            let num_empty = empty_tiles[0] + empty_tiles[1];
-            let num_owned = owned_tiles[0] + owned_tiles[1];
+            let num_empty = ((empty_tiles & 0x0f) + (empty_tiles >> 8)) as i32;
+            let num_owned = ((owned_tiles & 0x0f) + (owned_tiles >> 8)) as i32;
             if real_aligned + num_owned + num_empty > 5 {
                 alignment_values[p as usize - 1] += (real_aligned * real_aligned * real_aligned * real_aligned) + (num_owned * num_owned + num_empty);
             }

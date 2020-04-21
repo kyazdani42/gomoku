@@ -27,7 +27,7 @@ pub fn run(game: Game) -> Vec<Tile> {
     let mut best_hits = vec![];
     let empty_neighbours = game.empty_neighbours.clone();
 
-    let depth = 2;
+    let depth = 4;
     let mut alpha = MIN;
     for tile in empty_neighbours {
         unsafe {
