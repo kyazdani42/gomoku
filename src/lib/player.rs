@@ -15,8 +15,4 @@ impl Player {
     pub fn push_hit(&mut self, idx: (i32, i32)) {
         self.last_hits.push(idx)
     }
-
-    pub fn remove_hit(&mut self) {
-        self.last_hits.pop();
-    }
 }

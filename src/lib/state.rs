@@ -65,16 +65,17 @@ impl State {
         self.game.insert_tile(tile);
         self.game.update_opponent_alignments(&index_data.alignments);
         self.game.update_captures(&index_data.captured);
-        self.game.update_empty_neighbours(tile);
+        self.game.get_player_mut().push_hit(tile);
+        self.game.update_neighbours(tile);
 
         if index_data.win {
             self.winner = self.game.current_player;
-            self.game.switch_player(tile);
+            self.game.switch_player();
         } else if index_data.oponent_win {
             self.winner = self.game.opponent_player;
-            self.game.switch_player(tile);
+            self.game.switch_player();
         } else {
-            self.game.switch_player(tile);
+            self.game.switch_player();
             self.best_hits = ia::run(self.game.clone());
         }
 
@@ -91,8 +92,8 @@ impl State {
 
     fn update_forbidden(&mut self) {
         self.reset_forbidden();
-        let empty_neighbours = self.game.empty_neighbours.clone();
-        for neighbour in empty_neighbours {
+        let neighbours = self.game.neighbours.clone();
+        for neighbour in neighbours {
             let data = self.game.analyze(neighbour);
             if data.double_free_three {
                 self.forbidden.push(neighbour);

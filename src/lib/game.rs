@@ -19,7 +19,7 @@ pub struct Game {
     pub board: Vec<u64>,
     pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
-    pub empty_neighbours: HashSet<Tile>,
+    pub neighbours: HashSet<Tile>,
     pub opponent_alignments: Vec<Vec<Tile>>,
 }
 
@@ -32,7 +32,7 @@ impl Game {
             player1: Player::new(),
             player2: Player::new(),
             current_tiles: HashSet::new(),
-            empty_neighbours: HashSet::new(),
+            neighbours: HashSet::new(),
             opponent_alignments: vec![],
             tiles_directions: create_tiles_directions(board_size, &moves.straight_moves),
             tiles_neighbours: create_tiles_neighbours(board_size, &moves.all_moves),
@@ -45,8 +45,8 @@ impl Game {
         self.insert_tile(tile);
         self.update_opponent_alignments(alignments);
         self.update_captures(captured);
-        self.update_empty_neighbours(tile);
-        self.switch_player(tile);
+        self.update_neighbours(tile);
+        self.switch_player();
     }
 
     pub fn reset_game(
@@ -54,13 +54,13 @@ impl Game {
         tile: Tile,
         alignments: &[Vec<Tile>],
         captured: &[Tile],
-        empty_neighbours: &HashSet<Tile>,
+        neighbours: &HashSet<Tile>,
     ) {
         self.reset_switch_player();
         self.remove_tile(tile);
         self.reset_captures(captured);
         self.opponent_alignments = alignments.to_owned();
-        self.empty_neighbours = empty_neighbours.to_owned();
+        self.neighbours = neighbours.to_owned();
     }
 
     pub fn analyze(&self, tile: Tile) -> AnalyzedTile {
@@ -99,18 +99,15 @@ impl Game {
         }
     }
 
-    pub fn update_empty_neighbours(&mut self, tile: Tile) {
+    pub fn update_neighbours(&mut self, tile: Tile) {
         for tile in &self.tiles_neighbours[tile.0 as usize][tile.1 as usize] {
-            if self.get_tile_value(*tile) == 0 {
-                self.empty_neighbours.insert(*tile);
-            }
+            self.neighbours.insert(*tile);
         }
 
-        self.empty_neighbours.remove(&tile);
+        self.neighbours.remove(&tile);
     }
 
-    pub fn switch_player(&mut self, tile: Tile) {
-        self.get_player_mut().push_hit(tile);
+    pub fn switch_player(&mut self) {
         let tmp_player = self.current_player;
         self.current_player = self.opponent_player;
         self.opponent_player = tmp_player;
@@ -120,7 +117,6 @@ impl Game {
         let tmp_player = self.current_player;
         self.current_player = self.opponent_player;
         self.opponent_player = tmp_player;
-        self.get_player_mut().remove_hit();
     }
 
     pub fn get_player(&self) -> &Player {
@@ -139,7 +135,7 @@ impl Game {
         }
     }
 
-    fn get_player_mut(&mut self) -> &mut Player {
+    pub fn get_player_mut(&mut self) -> &mut Player {
         if self.current_player == 1 {
             &mut self.player1
         } else {
