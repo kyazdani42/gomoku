@@ -113,7 +113,14 @@ impl State {
     }
 
     fn get_board(&self) -> Vec<u8> {
-        let mut cloned_board = self.game.board.clone();
+        let mut cloned_board = vec![];
+        for line in &self.game.board {
+            let mut line_values = vec![];
+            for offset in 0..19 {
+                line_values.push((line >> (offset as u64 * 2) & 0x3) as u8)
+            }
+            cloned_board.push(line_values);
+        }
         for i in 0..3 {
             if i < self.best_hits.len() {
                 let tile = self.best_hits[i];

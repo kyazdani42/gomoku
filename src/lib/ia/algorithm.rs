@@ -84,13 +84,13 @@ fn alphabeta(
 ) -> i32 {
     if depth == 0 {
         let now = Instant::now();
-        let h = heuristic(game, maximizing_player);
+        // let h = heuristic(game, maximizing_player);
         // let h = thread_rng().gen();
         unsafe {
             HEURISTIC_TIME += now.elapsed().as_nanos();
             HEURISTIC_NUM += 1;
         }
-        return h;
+        return 1;
     }
 
     let empty_neighbours = game.empty_neighbours.clone();

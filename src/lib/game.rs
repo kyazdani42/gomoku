@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::u64::MAX;
 
 use super::analyze::{analyze_index, AnalyzedTile};
 use super::create_board::{create_tiles_directions, create_tiles_neighbours};
@@ -15,11 +16,11 @@ pub struct Game {
     pub opponent_player: u8,
     pub board_size: i32,
     pub current_tiles: HashSet<Tile>,
-    pub board: Vec<Vec<u8>>,
+    pub board: Vec<u64>,
     pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
     pub empty_neighbours: HashSet<Tile>,
-    pub opponent_alignments: Vec<Vec<Tile>>
+    pub opponent_alignments: Vec<Vec<Tile>>,
 }
 
 impl Game {
@@ -35,9 +36,7 @@ impl Game {
             opponent_alignments: vec![],
             tiles_directions: create_tiles_directions(board_size, &moves.straight_moves),
             tiles_neighbours: create_tiles_neighbours(board_size, &moves.all_moves),
-            board: (0..board_size)
-                .map(|_| (0..board_size).map(|_| 0).collect::<Vec<u8>>())
-                .collect(),
+            board: (0..board_size).map(|_| 0).collect(),
             board_size,
         }
     }
@@ -69,17 +68,17 @@ impl Game {
     }
 
     pub fn insert_tile(&mut self, tile: Tile) {
-        self.board[tile.0 as usize][tile.1 as usize] = self.current_player;
+        self.board[tile.0 as usize] |= (self.current_player as u64) << (tile.1 * 2);
         self.current_tiles.insert(tile);
     }
 
     pub fn remove_tile(&mut self, tile: Tile) {
-        self.board[tile.0 as usize][tile.1 as usize] = 0;
+        self.board[tile.0 as usize] &= MAX - (0x3 << (tile.1 * 2));
         self.current_tiles.remove(&tile);
     }
 
     pub fn get_tile_value(&self, tile: Tile) -> u8 {
-        self.board[tile.0 as usize][tile.1 as usize]
+        ((self.board[tile.0 as usize] >> (tile.1 * 2)) & 0x3) as u8
     }
 
     pub fn validate_tile(&self, tile: Tile) -> bool {
