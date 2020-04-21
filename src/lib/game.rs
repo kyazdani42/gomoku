@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use super::analyze::{analyze_index, AnalyzedTile};
-use super::create_board::{create_board, create_tiles_directions, create_tiles_neighbours};
+use super::create_board::{create_tiles_directions, create_tiles_neighbours};
 use super::player::Player;
 use super::r#move::Moves;
 
@@ -16,7 +16,6 @@ pub struct Game {
     pub board_size: i32,
     pub current_tiles: HashSet<Tile>,
     pub board: Vec<Vec<u8>>,
-    pub board_lines: Vec<Vec<Tile>>,
     pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
     pub empty_neighbours: HashSet<Tile>,
@@ -34,7 +33,6 @@ impl Game {
             current_tiles: HashSet::new(),
             empty_neighbours: HashSet::new(),
             opponent_alignments: vec![],
-            board_lines: create_board(board_size),
             tiles_directions: create_tiles_directions(board_size, &moves.straight_moves),
             tiles_neighbours: create_tiles_neighbours(board_size, &moves.all_moves),
             board: (0..board_size)

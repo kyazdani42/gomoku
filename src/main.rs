@@ -1,4 +1,4 @@
-use std::time::Instant;
+// use std::time::Instant;
 use std::sync::{Arc, Mutex};
 
 use hyper::rt::Future;

@@ -6,22 +6,22 @@ use crate::lib::game::{Game, Tile};
 
 use std::i32::{MAX, MIN};
 
-static mut analyzer_time: u128 = 0;
-static mut analyzer_num: i32 = 0;
-static mut update_time: u128 = 0;
-static mut reset_time: u128 = 0;
-static mut heuristic_time: u128 = 0;
-static mut heuristic_num: i32 = 0;
+static mut ANALYZER_TIME: u128 = 0;
+static mut ANALYZER_NUM: i32 = 0;
+static mut UPDATE_TIME: u128 = 0;
+static mut RESET_TIME: u128 = 0;
+static mut HEURISTIC_TIME: u128 = 0;
+static mut HEURISTIC_NUM: i32 = 0;
 use std::time::Instant;
 
 pub fn run(game: Game) -> Vec<Tile> {
     unsafe {
-        analyzer_time = 0;
-        analyzer_num = 0;
-        update_time = 0;
-        reset_time = 0;
-        heuristic_time = 0;
-        heuristic_num = 0;
+        ANALYZER_TIME = 0;
+        ANALYZER_NUM = 0;
+        UPDATE_TIME = 0;
+        RESET_TIME = 0;
+        HEURISTIC_TIME = 0;
+        HEURISTIC_NUM = 0;
     }
 
     let mut best_hits = vec![];
@@ -31,12 +31,12 @@ pub fn run(game: Game) -> Vec<Tile> {
     let mut alpha = MIN;
     for tile in empty_neighbours {
         unsafe {
-            analyzer_num += 1;
+            ANALYZER_NUM += 1;
         }
         let now = Instant::now();
         let data = game.analyze(tile);
         unsafe {
-            analyzer_time += now.elapsed().as_nanos();
+            ANALYZER_TIME += now.elapsed().as_nanos();
         }
 
         if data.double_free_three {
@@ -60,12 +60,12 @@ pub fn run(game: Game) -> Vec<Tile> {
     }
 
     unsafe {
-        println!("analyzed called {} times", analyzer_num);
-        println!("analyzed lasted {}ms", analyzer_time / 1_000_000);
-        println!("heuristic called {} times", heuristic_num);
-        println!("heuristic lasted {}ms", heuristic_time / 1_000_000);
-        println!("updates lasted {}ms", update_time / 1_000_000);
-        println!("reset lasted {}ms\n", reset_time / 1_000_000);
+        println!("analyzed called {} times", ANALYZER_NUM);
+        println!("analyzed lasted {}ms", ANALYZER_TIME / 1_000_000);
+        println!("heuristic called {} times", HEURISTIC_NUM);
+        println!("heuristic lasted {}ms", HEURISTIC_TIME / 1_000_000);
+        println!("updates lasted {}ms", UPDATE_TIME / 1_000_000);
+        println!("reset lasted {}ms\n", RESET_TIME / 1_000_000);
     }
 
     best_hits.sort_by(|a, b| b.1.cmp(&a.1));
@@ -87,8 +87,8 @@ fn alphabeta(
         let h = heuristic(game, maximizing_player);
         // let h = thread_rng().gen();
         unsafe {
-            heuristic_time += now.elapsed().as_nanos();
-            heuristic_num += 1;
+            HEURISTIC_TIME += now.elapsed().as_nanos();
+            HEURISTIC_NUM += 1;
         }
         return h;
     }
@@ -102,8 +102,8 @@ fn alphabeta(
         let now = Instant::now();
         let data = game.analyze(tile);
         unsafe {
-            analyzer_time += now.elapsed().as_nanos();
-            analyzer_num += 1;
+            ANALYZER_TIME += now.elapsed().as_nanos();
+            ANALYZER_NUM += 1;
         }
 
         if data.double_free_three {
@@ -124,7 +124,7 @@ fn alphabeta(
             let now = Instant::now();
             game.update_game(tile, &data.alignments, &data.captured);
             unsafe {
-                update_time += now.elapsed().as_nanos();
+                UPDATE_TIME += now.elapsed().as_nanos();
             }
             if maximizing_player {
                 value = i32::max(
@@ -134,7 +134,7 @@ fn alphabeta(
                 let now = Instant::now();
                 game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
                 unsafe {
-                    reset_time += now.elapsed().as_nanos();
+                    RESET_TIME += now.elapsed().as_nanos();
                 }
 
                 alpha = i32::max(alpha, value);
@@ -143,7 +143,7 @@ fn alphabeta(
                 let now = Instant::now();
                 game.reset_game(tile, &old_alignment, &data.captured, &empty_neighbours);
                 unsafe {
-                    reset_time += now.elapsed().as_nanos();
+                    RESET_TIME += now.elapsed().as_nanos();
                 }
                 beta = i32::min(beta, value);
             }

@@ -19,14 +19,14 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
             let mut empty_tiles: u16 = 0;
             let mut owned_tiles: u16 = 0;
 
-            for idx in 0..2 {
-                let direction = &directions[idx];
+            for (idx, direction) in directions.iter().enumerate() {
                 let len = direction.len();
                 if len == 0 {
                     continue;
                 }
 
                 let mut i = 0;
+                let byte_move = idx * 8;
                 while i < direction.len() {
                     let t = direction[i];
                     let value = game.get_tile_value(t);
@@ -35,14 +35,14 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
                     } else if value == 0 {
                         // 0Xff
                         // we store at 0X10 or 0X01 depending on idx.
-                        empty_tiles += 1 << (idx*8);
-                        // to compare, move idx to the right, so the right side byte is removed when idx is 1,
-                        // and then mask with 0x0f to get the rightmost value
-                        // and you get the 'no empty tiles' comparison
-                    } else if (empty_tiles >> (idx*8)) & 0x0f == 0 {
+                        empty_tiles += 1 << byte_move;
+                    // to compare, move idx to the right, so the right side byte is removed when idx is 1,
+                    // and then get the trailing_zeros to check if there are no empty tiles
+                    // and you get the 'no empty tiles' comparison
+                    } else if (empty_tiles >> byte_move).trailing_zeros() >= 4 {
                         real_aligned += 1;
                     } else {
-                        owned_tiles += 1 << (idx*8);
+                        owned_tiles += 1 << byte_move;
                     }
 
                     i += 1;
@@ -63,7 +63,9 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
             let num_empty = ((empty_tiles & 0x0f) + (empty_tiles >> 8)) as i32;
             let num_owned = ((owned_tiles & 0x0f) + (owned_tiles >> 8)) as i32;
             if real_aligned + num_owned + num_empty > 5 {
-                alignment_values[p as usize - 1] += (real_aligned * real_aligned * real_aligned * real_aligned) + (num_owned * num_owned + num_empty);
+                alignment_values[p as usize - 1] +=
+                    (real_aligned * real_aligned * real_aligned * real_aligned)
+                        + (num_owned * num_owned + num_empty);
             }
         }
     }
@@ -82,5 +84,6 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
     let op_align_value = alignment_values[opponent as usize - 1];
     let player_align_value = alignment_values[player as usize - 1];
 
-    (cur_player_capture + player_possible + player_align_value) - (op_capture + op_possible + op_align_value)
+    (cur_player_capture + player_possible + player_align_value)
+        - (op_capture + op_possible + op_align_value)
 }
