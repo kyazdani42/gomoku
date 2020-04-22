@@ -74,9 +74,8 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
         Ok(guard) => guard,
         Err(_) => return Option::None
     };
-    let index = index as i32;
-    let idx = (index / 19, index % 19);
-    state.run(idx);
+    let index = index as isize;
+    state.run(index);
     state.run_ia();
 
     get_response_data(&state)

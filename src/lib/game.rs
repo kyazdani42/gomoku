@@ -1,12 +1,11 @@
 use std::collections::HashSet;
-use std::u64::MAX;
 
 use super::analyze::{analyze_index, AnalyzedTile};
 use super::create_board::{create_tiles_directions, create_tiles_neighbours};
 use super::player::Player;
 use super::r#move::Moves;
 
-pub type Tile = (i32, i32);
+pub type Tile = isize;
 
 #[derive(Clone)]
 pub struct Game {
@@ -15,9 +14,9 @@ pub struct Game {
     pub current_player: u8,
     pub opponent_player: u8,
     pub current_tiles: Vec<Tile>,
-    pub board: Vec<u64>,
-    pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
-    pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
+    pub board: Vec<u8>,
+    pub tiles_neighbours: Vec<Vec<Tile>>,
+    pub tiles_directions: Vec<Vec<Vec<Vec<Tile>>>>,
     pub neighbours: HashSet<Tile>,
     pub opponent_alignments: Vec<Vec<Tile>>,
 }
@@ -35,7 +34,7 @@ impl Game {
             opponent_alignments: vec![],
             tiles_directions: create_tiles_directions(&moves.straight_moves),
             tiles_neighbours: create_tiles_neighbours(&moves.all_moves),
-            board: (0..19).map(|_| 0).collect(),
+            board: (0..(19*19)).map(|_| 0).collect(),
         }
     }
 
@@ -59,21 +58,27 @@ impl Game {
     }
 
     pub fn insert_tile(&mut self, tile: Tile) {
-        self.board[tile.0 as usize] |= (self.current_player as u64) << (tile.1 * 2);
+        unsafe {
+            *self.board.as_mut_ptr().offset(tile as isize) = self.current_player;
+        }
         self.current_tiles.push(tile);
     }
 
     pub fn remove_tile(&mut self, tile: Tile) {
-        self.board[tile.0 as usize] &= MAX - (0x3 << (tile.1 * 2));
+        unsafe {
+            *self.board.as_mut_ptr().offset(tile) = 0;
+        }
         self.current_tiles.retain(|x| *x != tile);
     }
 
     pub fn get_tile_value(&self, tile: Tile) -> u8 {
-        ((self.board[tile.0 as usize] >> (tile.1 * 2)) & 0x3) as u8
+        unsafe {
+            *self.board.as_ptr().offset(tile)
+        }
     }
 
     pub fn validate_tile(&self, tile: Tile) -> bool {
-        -1 < tile.0 && tile.0 < 19 && -1 < tile.1 && tile.1 < 19
+        -1 < tile && tile < 19 * 19
     }
 
     pub fn update_captures(&mut self, captured: &[Tile]) {
@@ -91,7 +96,7 @@ impl Game {
     }
 
     pub fn update_neighbours(&mut self, tile: Tile) {
-        for tile in &self.tiles_neighbours[tile.0 as usize][tile.1 as usize] {
+        for tile in &self.tiles_neighbours[tile as usize] {
             self.neighbours.insert(*tile);
         }
 

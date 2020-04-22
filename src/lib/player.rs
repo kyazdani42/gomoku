@@ -1,6 +1,8 @@
+use super::game::Tile;
+
 #[derive(Clone)]
 pub struct Player {
-    pub last_hits: Vec<(i32,i32)>,
+    pub last_hits: Vec<Tile>,
     pub captured: u8,
 }
 
@@ -12,7 +14,7 @@ impl Player {
         }
     }
 
-    pub fn push_hit(&mut self, idx: (i32, i32)) {
-        self.last_hits.push(idx)
+    pub fn push_hit(&mut self, tile: Tile) {
+        self.last_hits.push(tile)
     }
 }

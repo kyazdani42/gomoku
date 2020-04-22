@@ -44,7 +44,7 @@ pub fn run(game: Game, level: u8) -> Vec<Tile> {
 
     let depth = level as i32 * 2;
     let mut alpha = MIN;
-    let mut best_tree: Vec<Tile> = vec![(0, 0); depth as usize - 1];
+    let mut best_tree: Vec<Tile> = vec![0; depth as usize - 1];
     for tile in neighbours {
         if game.get_tile_value(tile) != 0 {
             continue;
@@ -92,7 +92,7 @@ pub fn run(game: Game, level: u8) -> Vec<Tile> {
     }
 
     for (i, v) in best_tree.iter().enumerate() {
-        println!("runner {}: ({}, {})", i, v.0, v.1);
+        println!("runner {}: ({})", i, v);
     }
 
     best_hits.sort_by(|a, b| b.1.cmp(&a.1));

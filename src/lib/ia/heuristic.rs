@@ -20,7 +20,7 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
         let tile = game.current_tiles[i];
         let p = game.get_tile_value(tile);
         let op = if p == 1 { 2 } else { 1 };
-        for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
+        for directions in &game.tiles_directions[tile as usize] {
             let mut real_aligned = 0;
             let mut empty_tiles: u8 = 0;
             let mut owned_tiles: u8 = 0;

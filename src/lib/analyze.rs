@@ -19,7 +19,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
         oponent_win: false,
     };
 
-    for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
+    for directions in &game.tiles_directions[tile as usize] {
         let mut counters = [1, 1];
         let mut tile_values = [4, 4];
         let mut aligned = [vec![], vec![]];
@@ -179,7 +179,7 @@ fn get_capturable_indexes(aligned: &[Tile], game: &Game) -> Vec<Tile> {
     let mut capturable = vec![];
 
     for tile in aligned {
-        for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
+        for directions in &game.tiles_directions[*tile as usize] {
             let dir1 = &directions[0];
             let dir2 = &directions[1];
 
@@ -227,7 +227,7 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
     let mut catchers = HashMap::new();
 
     for tile in &game.get_player().last_hits {
-        for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {
+        for directions in &game.tiles_directions[*tile as usize] {
             let dir1 = &directions[0];
             let dir2 = &directions[1];
 

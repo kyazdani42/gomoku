@@ -1,9 +1,9 @@
-use super::game::Tile;
+type Tile = (isize, isize);
 
 pub trait Move {
     fn is_ok(&self, tile: Tile) -> bool;
     fn get_next_tile(&self, tile: Tile) -> Tile;
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile;
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile;
 }
 
 struct Left {}
@@ -15,7 +15,7 @@ impl Move for Left {
         (tile.0, tile.1 - 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0, tile.1 - depth)
     }
 }
@@ -29,7 +29,7 @@ impl Move for Right {
         (tile.0, tile.1 + 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0, tile.1 + depth)
     }
 }
@@ -43,7 +43,7 @@ impl Move for Top {
         (tile.0 - 1, tile.1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 - depth, tile.1)
     }
 }
@@ -57,7 +57,7 @@ impl Move for Bottom {
         (tile.0 + 1, tile.1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 + depth, tile.1)
     }
 }
@@ -71,7 +71,7 @@ impl Move for TopLeft {
         (tile.0 - 1, tile.1 - 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 - depth, tile.1 - depth)
     }
 }
@@ -85,7 +85,7 @@ impl Move for TopRight {
         (tile.0 - 1, tile.1 + 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 - depth, tile.1 + depth)
     }
 }
@@ -99,7 +99,7 @@ impl Move for BottomLeft {
         (tile.0 + 1, tile.1 - 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 + depth, tile.1 - depth)
     }
 }
@@ -113,7 +113,7 @@ impl Move for BottomRight {
         (tile.0 + 1, tile.1 + 1)
     }
 
-    fn get_tile_mult(&self, tile: Tile, depth: i32) -> Tile {
+    fn get_tile_mult(&self, tile: Tile, depth: isize) -> Tile {
         (tile.0 + depth, tile.1 + depth)
     }
 }

@@ -32,7 +32,7 @@ impl State {
             time: 0,
             winner: 0,
             game: Game::new(),
-            best_hits: vec![(0, 0)],
+            best_hits: vec![0],
             forbidden: vec![],
         }
     }
@@ -44,7 +44,7 @@ impl State {
             time: 0,
             winner: 0,
             game: Game::new(),
-            best_hits: vec![(9, 9)],
+            best_hits: vec![19 * 19 / 2],
             forbidden: vec![],
         };
     }
@@ -113,23 +113,16 @@ impl State {
     }
 
     fn get_board(&self) -> Vec<u8> {
-        let mut cloned_board = vec![];
-        for line in &self.game.board {
-            let mut line_values = vec![];
-            for offset in 0..19 {
-                line_values.push((line >> (offset as u64 * 2) & 0x3) as u8)
-            }
-            cloned_board.push(line_values);
-        }
+        let mut cloned_board = self.game.board.clone();
         for i in 0..3 {
             if i < self.best_hits.len() {
                 let tile = self.best_hits[i];
-                cloned_board[tile.0 as usize][tile.1 as usize] = 5 + i as u8;
+                cloned_board[tile as usize] = 5 + i as u8;
             }
         }
         for tile in &self.forbidden {
-            cloned_board[tile.0 as usize][tile.1 as usize] = 3;
+            cloned_board[*tile as usize] = 3;
         }
-        cloned_board.concat()
+        cloned_board
     }
 }
