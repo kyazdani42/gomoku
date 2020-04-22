@@ -14,8 +14,7 @@ pub struct Game {
     pub player2: Player,
     pub current_player: u8,
     pub opponent_player: u8,
-    pub board_size: i32,
-    pub current_tiles: HashSet<Tile>,
+    pub current_tiles: Vec<Tile>,
     pub board: Vec<u64>,
     pub tiles_neighbours: Vec<Vec<Vec<Tile>>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Vec<Tile>>>>>,
@@ -24,20 +23,19 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(board_size: i32) -> Self {
-        let moves = Moves::new(board_size);
+    pub fn new() -> Self {
+        let moves = Moves::new();
         Self {
             current_player: 1,
             opponent_player: 2,
             player1: Player::new(),
             player2: Player::new(),
-            current_tiles: HashSet::new(),
+            current_tiles: vec![],
             neighbours: HashSet::new(),
             opponent_alignments: vec![],
-            tiles_directions: create_tiles_directions(board_size, &moves.straight_moves),
-            tiles_neighbours: create_tiles_neighbours(board_size, &moves.all_moves),
-            board: (0..board_size).map(|_| 0).collect(),
-            board_size,
+            tiles_directions: create_tiles_directions(&moves.straight_moves),
+            tiles_neighbours: create_tiles_neighbours(&moves.all_moves),
+            board: (0..19).map(|_| 0).collect(),
         }
     }
 
@@ -49,18 +47,11 @@ impl Game {
         self.switch_player();
     }
 
-    pub fn reset_game(
-        &mut self,
-        tile: Tile,
-        alignments: &[Vec<Tile>],
-        captured: &[Tile],
-        neighbours: &HashSet<Tile>,
-    ) {
+    pub fn reset_game(&mut self, tile: Tile, alignments: &[Vec<Tile>], captured: &[Tile]) {
         self.reset_switch_player();
         self.remove_tile(tile);
         self.reset_captures(captured);
         self.opponent_alignments = alignments.to_owned();
-        self.neighbours = neighbours.to_owned();
     }
 
     pub fn analyze(&self, tile: Tile) -> AnalyzedTile {
@@ -69,12 +60,12 @@ impl Game {
 
     pub fn insert_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize] |= (self.current_player as u64) << (tile.1 * 2);
-        self.current_tiles.insert(tile);
+        self.current_tiles.push(tile);
     }
 
     pub fn remove_tile(&mut self, tile: Tile) {
         self.board[tile.0 as usize] &= MAX - (0x3 << (tile.1 * 2));
-        self.current_tiles.remove(&tile);
+        self.current_tiles.retain(|x| *x != tile);
     }
 
     pub fn get_tile_value(&self, tile: Tile) -> u8 {
@@ -82,7 +73,7 @@ impl Game {
     }
 
     pub fn validate_tile(&self, tile: Tile) -> bool {
-        -1 < tile.0 && tile.0 < self.board_size && -1 < tile.1 && tile.1 < self.board_size
+        -1 < tile.0 && tile.0 < 19 && -1 < tile.1 && tile.1 < 19
     }
 
     pub fn update_captures(&mut self, captured: &[Tile]) {

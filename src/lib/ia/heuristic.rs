@@ -10,8 +10,14 @@ pub fn heuristic(game: &Game, _maximizing_player: bool) -> i32 {
     let mut alignment_values = vec![0, 0];
     let mut possible_capture = vec![0, 0];
 
-    for tile in &game.current_tiles {
-        let tile = *tile;
+    let len = game.current_tiles.len();
+    let from = if len > 8 {
+        len - 8
+    } else {
+        0
+    };
+    for i in from..len {
+        let tile = game.current_tiles[i];
         let p = game.get_tile_value(tile);
         let op = if p == 1 { 2 } else { 1 };
         for directions in &game.tiles_directions[tile.0 as usize][tile.1 as usize] {

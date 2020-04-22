@@ -20,12 +20,10 @@ impl Move for Left {
     }
 }
 
-struct Right {
-    board_size: i32,
-}
+struct Right {}
 impl Move for Right {
     fn is_ok(&self, tile: Tile) -> bool {
-        tile.1 < self.board_size
+        tile.1 < 19
     }
     fn get_next_tile(&self, tile: Tile) -> Tile {
         (tile.0, tile.1 + 1)
@@ -50,12 +48,10 @@ impl Move for Top {
     }
 }
 
-struct Bottom {
-    board_size: i32,
-}
+struct Bottom {}
 impl Move for Bottom {
     fn is_ok(&self, tile: Tile) -> bool {
-        tile.0 < self.board_size
+        tile.0 < 19
     }
     fn get_next_tile(&self, tile: Tile) -> Tile {
         (tile.0 + 1, tile.1)
@@ -80,12 +76,10 @@ impl Move for TopLeft {
     }
 }
 
-struct TopRight {
-    board_size: i32,
-}
+struct TopRight {}
 impl Move for TopRight {
     fn is_ok(&self, tile: Tile) -> bool {
-        tile.0 > -1 && tile.1 < self.board_size
+        tile.0 > -1 && tile.1 < 19
     }
     fn get_next_tile(&self, tile: Tile) -> Tile {
         (tile.0 - 1, tile.1 + 1)
@@ -96,12 +90,10 @@ impl Move for TopRight {
     }
 }
 
-struct BottomLeft {
-    board_size: i32,
-}
+struct BottomLeft {}
 impl Move for BottomLeft {
     fn is_ok(&self, tile: Tile) -> bool {
-        tile.0 < self.board_size && tile.1 > -1
+        tile.0 < 19 && tile.1 > -1
     }
     fn get_next_tile(&self, tile: Tile) -> Tile {
         (tile.0 + 1, tile.1 - 1)
@@ -112,12 +104,10 @@ impl Move for BottomLeft {
     }
 }
 
-struct BottomRight {
-    board_size: i32,
-}
+struct BottomRight {}
 impl Move for BottomRight {
     fn is_ok(&self, tile: Tile) -> bool {
-        tile.0 < self.board_size && tile.1 < self.board_size
+        tile.0 < 19 && tile.1 < 19
     }
     fn get_next_tile(&self, tile: Tile) -> Tile {
         (tile.0 + 1, tile.1 + 1)
@@ -134,26 +124,23 @@ pub struct Moves {
 }
 
 impl Moves {
-    pub fn new(board_size: i32) -> Self {
+    pub fn new() -> Self {
         Self {
             all_moves: vec![
                 Box::new(Left {}),
-                Box::new(Right { board_size }),
+                Box::new(Right {}),
                 Box::new(Top {}),
-                Box::new(Bottom { board_size }),
+                Box::new(Bottom {}),
                 Box::new(TopLeft {}),
-                Box::new(TopRight { board_size }),
-                Box::new(BottomLeft { board_size }),
-                Box::new(BottomRight { board_size }),
+                Box::new(TopRight {}),
+                Box::new(BottomLeft {}),
+                Box::new(BottomRight {}),
             ],
             straight_moves: vec![
-                vec![Box::new(Left {}), Box::new(Right { board_size })],
-                vec![Box::new(Top {}), Box::new(Bottom { board_size })],
-                vec![Box::new(TopLeft {}), Box::new(BottomRight { board_size })],
-                vec![
-                    Box::new(TopRight { board_size }),
-                    Box::new(BottomLeft { board_size }),
-                ],
+                vec![Box::new(Left {}), Box::new(Right {})],
+                vec![Box::new(Top {}), Box::new(Bottom {})],
+                vec![Box::new(TopLeft {}), Box::new(BottomRight {})],
+                vec![Box::new(TopRight {}), Box::new(BottomLeft {})],
             ],
         }
     }

@@ -19,6 +19,7 @@ pub struct State {
     time: u128,
     game: Game,
     winner: u8,
+    level: u8,
     best_hits: Vec<Tile>,
     forbidden: Vec<Tile>,
 }
@@ -27,21 +28,23 @@ impl State {
     pub fn new() -> State {
         State {
             ia: 0,
+            level: 1,
             time: 0,
             winner: 0,
-            game: Game::new(19),
+            game: Game::new(),
             best_hits: vec![(0, 0)],
             forbidden: vec![],
         }
     }
 
-    pub fn initialize(&mut self, board_size: u8, ia: u8) {
+    pub fn initialize(&mut self, ia: u8, level: u8) {
         *self = State {
             ia,
+            level,
             time: 0,
             winner: 0,
-            game: Game::new(board_size as i32),
-            best_hits: vec![(board_size as i32 / 2, board_size as i32 / 2)],
+            game: Game::new(),
+            best_hits: vec![(9, 9)],
             forbidden: vec![],
         };
     }
@@ -50,10 +53,6 @@ impl State {
         if self.should_run_ia() && !self.best_hits.is_empty() {
             self.run(self.best_hits[0]);
         }
-    }
-
-    pub fn get_board_size(&self) -> i32 {
-        self.game.board_size
     }
 
     pub fn run(&mut self, tile: Tile) {
@@ -76,7 +75,7 @@ impl State {
             self.game.switch_player();
         } else {
             self.game.switch_player();
-            self.best_hits = ia::run(self.game.clone());
+            self.best_hits = ia::run(self.game.clone(), self.level);
         }
 
         self.update_forbidden();

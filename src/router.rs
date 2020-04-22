@@ -74,9 +74,8 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
         Ok(guard) => guard,
         Err(_) => return Option::None
     };
-    let board_size = state.get_board_size() as i32;
     let index = index as i32;
-    let idx = (index / board_size, index % board_size);
+    let idx = (index / 19, index % 19);
     state.run(idx);
     state.run_ia();
 
@@ -85,10 +84,11 @@ fn play(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
 
 fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<State>>) -> Option<String> {
     let params = get_params(params)?;
-    let size_param = find_param(&params, "size")?;
 
-    let board_size = parse_param(&size_param)?;
-    if board_size > 25 || board_size < 19 {
+    let level = find_param(&params, "level")?;
+
+    let level = parse_param(&level)? as u8;
+    if level > 5 || 1 > level {
         return None;
     }
 
@@ -101,7 +101,7 @@ fn handle_initialization(params: Option<&str>, state: &Arc<Mutex<State>>) -> Opt
 
     let mut state = state.lock().unwrap();
 
-    state.initialize(board_size as u8, ia);
+    state.initialize(ia, level);
     state.run_ia();
 
     get_response_data(&state)

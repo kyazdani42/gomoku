@@ -1,15 +1,12 @@
 use super::game::Tile;
 use super::r#move::Move;
 
-pub fn create_tiles_neighbours(
-    board_size: i32,
-    moves: &[Box<dyn Move>],
-) -> Vec<Vec<Vec<Tile>>> {
+pub fn create_tiles_neighbours(moves: &[Box<dyn Move>]) -> Vec<Vec<Vec<Tile>>> {
     let mut all_tiles_neighbours = vec![];
 
-    for y in 0..board_size {
+    for y in 0..19 {
         let mut line = vec![];
-        for x in 0..board_size {
+        for x in 0..19 {
             let mut tiles = vec![];
             for mov in moves {
                 for i in 1..3 {
@@ -28,14 +25,13 @@ pub fn create_tiles_neighbours(
 }
 
 pub fn create_tiles_directions(
-    board_size: i32,
     straight_moves: &[Vec<Box<dyn Move>>],
 ) -> Vec<Vec<Vec<Vec<Vec<Tile>>>>> {
     let mut all_directions_tiles = vec![];
 
-    for y in 0..board_size {
+    for y in 0..19 {
         let mut line = vec![];
-        for x in 0..board_size {
+        for x in 0..19 {
             let mut tiles = vec![];
             for moves in straight_moves {
                 let mut dir_tiles = vec![];

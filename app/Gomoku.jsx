@@ -44,8 +44,8 @@ export const Gomoku = () => {
 };
 
 const handleInit = async (initParam, setState, setError) => {
-  const { ia, size } = initParam;
-  const res = await fetch(getInitUrl({ ia, size }));
+  const { ia, level } = initParam;
+  const res = await fetch(getInitUrl({ ia, level }));
   const { ok, headers } = res;
   if (ok && headers.get('Content-Type') === 'application/json') {
     setState(await res.json());
@@ -56,7 +56,7 @@ const handleInit = async (initParam, setState, setError) => {
 
 const URL = 'http://localhost:3001';
 
-const getInitUrl = ({ ia, size }) => `${URL}/init?ia=${ia}&size=${size}`;
+const getInitUrl = ({ ia, level }) => `${URL}/init?ia=${ia}&level=${level}`;
 
 const handlePlay = async (index, setState, setError) => {
   const res = await fetch(getPlayUrl(index));
