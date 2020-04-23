@@ -178,6 +178,7 @@ fn get_indexes_from_alignment(alignment: &[Tile]) -> Vec<Tile> {
 fn get_capturable_indexes(aligned: &[Tile], game: &Game) -> Vec<Tile> {
     let mut capturable = vec![];
 
+    let cur_player = game.current_player;
     for tile in aligned {
         for directions in &game.tiles_directions[*tile as usize] {
             let dir1 = &directions[0];
@@ -190,26 +191,27 @@ fn get_capturable_indexes(aligned: &[Tile], game: &Game) -> Vec<Tile> {
             let first_value = game.get_tile_value(dir1[0]);
             let second_value = game.get_tile_value(dir2[0]);
 
-            if first_value == 1 && second_value != 1 {
+
+            if first_value == cur_player && second_value != cur_player {
                 if dir1.len() < 2 {
                     continue;
                 }
 
                 let edge_value = game.get_tile_value(dir1[1]);
-                if edge_value == 1 {
+                if edge_value == cur_player {
                     continue;
                 }
 
                 if edge_value != second_value {
                     capturable.push(*tile);
                 }
-            } else if second_value == 1 && first_value != 1 {
+            } else if second_value == cur_player && first_value != cur_player {
                 if dir2.len() < 2 {
                     continue;
                 }
 
                 let edge_value = game.get_tile_value(dir2[1]);
-                if edge_value == 1 {
+                if edge_value == cur_player {
                     continue;
                 }
 
@@ -226,6 +228,7 @@ fn get_capturable_indexes(aligned: &[Tile], game: &Game) -> Vec<Tile> {
 fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
     let mut catchers = HashMap::new();
 
+    let cur_player = game.current_player;
     for tile in &game.get_player().last_hits {
         for directions in &game.tiles_directions[*tile as usize] {
             let dir1 = &directions[0];
@@ -238,13 +241,13 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
             let first_value = game.get_tile_value(dir1[0]);
             let second_value = game.get_tile_value(dir2[0]);
 
-            if first_value == 1 && second_value != 1 {
+            if first_value == cur_player && second_value != cur_player {
                 if dir1.len() < 2 {
                     continue;
                 }
 
                 let edge_value = game.get_tile_value(dir1[1]);
-                if edge_value == 1 {
+                if edge_value == cur_player {
                     continue;
                 }
 
@@ -257,13 +260,13 @@ fn get_catcher_indexes(game: &Game) -> HashMap<Tile, i32> {
                     };
                     catchers.insert(value_index, value);
                 }
-            } else if second_value == 1 && first_value != 1 {
+            } else if second_value == cur_player && first_value != cur_player {
                 if dir2.len() < 2 {
                     continue;
                 }
 
                 let edge_value = game.get_tile_value(dir2[1]);
-                if edge_value == 1 {
+                if edge_value == cur_player {
                     continue;
                 }
 

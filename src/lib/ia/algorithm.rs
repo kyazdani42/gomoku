@@ -51,7 +51,7 @@ pub fn run(game: &mut Game, level: u8) -> Vec<Tile> {
     }
 
     let mut alpha = MIN;
-    let mut new_tile_strength: Vec<i32> = (0..(19 * 19)).map(|_| 0).collect();
+    let mut new_tile_strength: Vec<u128> = (0..(19 * 19)).map(|_| 0).collect();
 
     for tile in neighbours {
         if game.get_tile_value(tile) != 0 {
@@ -103,7 +103,7 @@ pub fn run(game: &mut Game, level: u8) -> Vec<Tile> {
         print!("| {} ", v.1);
     }
     println!("\n");
-    new_tile_strength[best_hits[0].0 as usize] += 2 * depth;
+    new_tile_strength[best_hits[0].0 as usize] += 2 * depth as u128;
     best_hits.iter().map(|v| v.0).collect()
 }
 
@@ -113,7 +113,7 @@ fn alphabeta(
     mut alpha: i32,
     mut beta: i32,
     maximizing_player: bool,
-    new_tile_strength: &mut Vec<i32>,
+    new_tile_strength: &mut Vec<u128>,
 ) -> i32 {
     if depth < 1 {
         let now = Instant::now();
@@ -147,7 +147,7 @@ fn alphabeta(
             continue;
         } else if data.win {
             unsafe {
-                new_tile_strength[tile as usize] += DEPTH + depth;
+                new_tile_strength[tile as usize] += DEPTH as u128 + depth as u128;
             }
             return if maximizing_player {
                 4000 - depth
@@ -242,7 +242,7 @@ fn alphabeta(
         }
     }
     unsafe {
-        new_tile_strength[best_tile as usize] += DEPTH + depth;
+        new_tile_strength[best_tile as usize] += DEPTH as u128 + depth as u128;
     }
     value
 }

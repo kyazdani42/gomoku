@@ -12,7 +12,7 @@ pub struct Game {
     pub current_player: u8,
     pub opponent_player: u8,
     pub current_tiles: Vec<Tile>,
-    pub board_tile_strength: Vec<i32>,
+    pub board_tile_strength: Vec<u128>,
     pub board: Vec<u8>,
     pub tiles_neighbours: Vec<Vec<Tile>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Tile>>>>,
@@ -75,7 +75,7 @@ impl Game {
         unsafe { *self.board.as_ptr().offset(tile) }
     }
 
-    pub fn update_tile_strength(&mut self, tile_strengths: &[i32]) {
+    pub fn update_tile_strength(&mut self, tile_strengths: &[u128]) {
         self.board_tile_strength = tile_strengths.to_owned();
     }
 
