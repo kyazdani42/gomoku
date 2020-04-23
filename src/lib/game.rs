@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::analyze::{analyze_index, AnalyzedTile};
 use super::create_board::{create_tiles_directions, create_tiles_neighbours};
 use super::player::Player;
@@ -14,10 +12,11 @@ pub struct Game {
     pub current_player: u8,
     pub opponent_player: u8,
     pub current_tiles: Vec<Tile>,
+    pub board_tile_strength: Vec<i32>,
     pub board: Vec<u8>,
     pub tiles_neighbours: Vec<Vec<Tile>>,
     pub tiles_directions: Vec<Vec<Vec<Vec<Tile>>>>,
-    pub neighbours: HashSet<Tile>,
+    pub neighbours: Vec<Tile>,
     pub opponent_alignments: Vec<Vec<Tile>>,
 }
 
@@ -30,11 +29,12 @@ impl Game {
             player1: Player::new(),
             player2: Player::new(),
             current_tiles: vec![],
-            neighbours: HashSet::new(),
+            board_tile_strength: (0..(19 * 19)).map(|_| 0).collect(),
+            neighbours: vec![],
             opponent_alignments: vec![],
             tiles_directions: create_tiles_directions(&moves.straight_moves),
             tiles_neighbours: create_tiles_neighbours(&moves.all_moves),
-            board: (0..(19*19)).map(|_| 0).collect(),
+            board: (0..(19 * 19)).map(|_| 0).collect(),
         }
     }
 
@@ -72,9 +72,11 @@ impl Game {
     }
 
     pub fn get_tile_value(&self, tile: Tile) -> u8 {
-        unsafe {
-            *self.board.as_ptr().offset(tile)
-        }
+        unsafe { *self.board.as_ptr().offset(tile) }
+    }
+
+    pub fn update_tile_strength(&mut self, tile_strengths: &[i32]) {
+        self.board_tile_strength = tile_strengths.to_owned();
     }
 
     pub fn validate_tile(&self, tile: Tile) -> bool {
@@ -95,12 +97,20 @@ impl Game {
         }
     }
 
+    pub fn sort_neighbours(&mut self) {
+        let board_tile = &self.board_tile_strength;
+        self.neighbours.sort_by(|idx, idx2| {
+            board_tile[*idx2 as usize].cmp(&board_tile[*idx as usize])
+        });
+    }
+
     pub fn update_neighbours(&mut self, tile: Tile) {
         for tile in &self.tiles_neighbours[tile as usize] {
-            self.neighbours.insert(*tile);
+            if !self.neighbours.contains(tile) {
+                self.neighbours.push(*tile);
+            }
         }
-
-        self.neighbours.remove(&tile);
+        self.sort_neighbours();
     }
 
     pub fn switch_player(&mut self) {

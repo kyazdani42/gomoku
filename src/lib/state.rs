@@ -75,7 +75,7 @@ impl State {
             self.game.switch_player();
         } else {
             self.game.switch_player();
-            self.best_hits = ia::run(self.game.clone(), self.level);
+            self.best_hits = ia::run(&mut self.game, self.level);
         }
 
         self.update_forbidden();
