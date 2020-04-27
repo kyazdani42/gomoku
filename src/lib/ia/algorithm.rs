@@ -85,6 +85,7 @@ pub fn run(game: &mut Game, level: u8) -> Vec<Tile> {
                 MAX,
                 false,
                 &mut new_tile_strength,
+                data.catchers,
             );
             if value > alpha {
                 alpha = value;
@@ -114,6 +115,7 @@ fn alphabeta(
     mut beta: i32,
     maximizing_player: bool,
     new_tile_strength: &mut Vec<u128>,
+    catchers: Vec<Tile>,
 ) -> i32 {
     if depth < 1 {
         let now = Instant::now();
@@ -126,7 +128,7 @@ fn alphabeta(
         return h;
     }
 
-    let neighbours = game.neighbours.clone();
+    let neighbours = if catchers.len() > 0 {catchers} else {game.neighbours.clone()};
     let old_alignment = game.opponent_alignments.clone();
     let mut value = if maximizing_player { MIN } else { MAX };
     let mut best_tile = 0;
@@ -211,6 +213,7 @@ fn alphabeta(
                 beta,
                 !maximizing_player,
                 new_tile_strength,
+                data.catchers,
             );
 
             if maximizing_player && alphabeta_value > value {

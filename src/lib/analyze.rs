@@ -7,6 +7,7 @@ pub struct AnalyzedTile {
     pub double_free_three: bool,
     pub win: bool,
     pub oponent_win: bool,
+    pub catchers: Vec<Tile>,
 }
 
 pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
@@ -17,6 +18,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
         double_free_three: false,
         win: false,
         oponent_win: false,
+        catchers: vec![],
     };
 
     for directions in &game.tiles_directions[tile as usize] {
@@ -117,6 +119,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
                 double_free_three: true,
                 win: false,
                 oponent_win: false,
+                catchers: vec![],
             };
         }
 
@@ -149,6 +152,8 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
             let catchers = get_catcher_indexes(game);
 
             let max_captures = catchers.iter().fold(0, |max_c, catcher| {
+                data.catchers.push(*catcher.0);
+
                 if max_c > *catcher.1 {
                     max_c
                 } else {
