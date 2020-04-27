@@ -73,7 +73,7 @@ pub fn run(game: &mut Game, level: u8) -> Vec<Tile> {
         if data.win {
             best_hits.push((tile, MAX));
             break;
-        } else if data.oponent_win {
+        } else if data.oponent_win || data.oponent_can_win {
             best_hits.push((tile, MIN));
         } else {
             let mut game = game.clone();
@@ -156,7 +156,7 @@ fn alphabeta(
             } else {
                 -4000 + depth
             };
-        } else if data.oponent_win {
+        } else if data.oponent_win || data.oponent_can_win {
             if maximizing_player && -3000 > value {
                 value = -3000;
                 best_tile = tile;

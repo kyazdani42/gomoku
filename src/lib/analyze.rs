@@ -8,6 +8,7 @@ pub struct AnalyzedTile {
     pub win: bool,
     pub oponent_win: bool,
     pub catchers: Vec<Tile>,
+    pub oponent_can_win: bool,
 }
 
 pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
@@ -19,6 +20,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
         win: false,
         oponent_win: false,
         catchers: vec![],
+        oponent_can_win: false,
     };
 
     for directions in &game.tiles_directions[tile as usize] {
@@ -120,6 +122,7 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
                 win: false,
                 oponent_win: false,
                 catchers: vec![],
+                oponent_can_win: false,
             };
         }
 
@@ -163,6 +166,8 @@ pub fn analyze_index(tile: Tile, game: &Game) -> AnalyzedTile {
 
             if game.get_opponent().captured as i32 + max_captures < 10 {
                 data.win = true
+            } else {
+                data.oponent_can_win = true
             }
         }
     }
